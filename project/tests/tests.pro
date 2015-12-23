@@ -13,8 +13,6 @@ SOURCES +=  main.cpp
 SOURCES +=  testqstring.cpp
 
 
-
-
 LIBS += -lgmock
 LIBS += -lgtest
 

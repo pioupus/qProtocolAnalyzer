@@ -15,6 +15,8 @@ HEADERS += mainwindow.h
 
 FORMS    += mainwindow.ui
 
+
+
 #INCLUDEPATH += $$(PYTHON_PATH)/include
 
 #exists( $$(PYTHON_PATH)/include/python.h ) {

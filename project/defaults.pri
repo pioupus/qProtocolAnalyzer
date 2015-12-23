@@ -12,9 +12,15 @@ INCLUDEPATH += $$PWD/src/CommunicationDevices
 INCLUDEPATH += $$PWD/libs/googletest/googletest/include
 INCLUDEPATH += $$PWD/libs/googletest/googlemock/include
 
-LIBS += -L$$PWD/libs/googletest/build/googlemock/
-LIBS += -L$$PWD/libs/googletest/build/googlemock/gtest
+LIBS += -L$$PWD/libs/build/googletest/googlemock/
+LIBS += -L$$PWD/libs/build/googletest/googlemock/gtest
 
+
+
+INCLUDEPATH += $$PWD/libs/build/qtserialport/debug/include/
+LIBS += -L$$PWD/libs/build/qtserialport/debug/src/serialport/
+LIBS += -L$$PWD/libs/build/qtserialport/lib/
+LIBS += -lQtSerialPort
 
 #exists( $$PWD/libs/PythonQt3.0/src/PythonQt.h ) {
     #message(found python windows)
@@ -43,6 +49,8 @@ LIBS += -L$$PWD/libs/googletest/build/googlemock/gtest
 
 
 #LIBS += -lPythonQt  #-lPythonQt_QtAll
+
+
 
 CONFIG += c++14
 CONFIG += warn
