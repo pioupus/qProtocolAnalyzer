@@ -17,13 +17,22 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+public slots:
+    void on_btnConnectClicked();
+
+
 private:
     Ui::MainWindow *ui;
 
     void refreshTabs(void);
 
-    QWidget* createTabPage(void);
+    QWidget* createTabPage(int tabIndex);
 
+    void clearSerialPorts();
+   QList<QSerialPort*> serialPortList;
+   QList<QSerialPort*> openPortList;
+
+   QSerialPort::StopBits stopBitDescriptionToStopBit(QString desc);
 };
 
 #endif // MAINWINDOW_H

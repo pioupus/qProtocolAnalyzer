@@ -18,9 +18,19 @@ LIBS += -L$$PWD/libs/build/googletest/googlemock/gtest
 
 
 INCLUDEPATH += $$PWD/libs/build/qtserialport/debug/include/
-LIBS += -L$$PWD/libs/build/qtserialport/debug/src/serialport/
-LIBS += -L$$PWD/libs/build/qtserialport/lib/
-LIBS += -lQtSerialPort
+CONFIG( debug, debug|release ) {
+    LIBS += -L$$PWD/libs/build/qtserialport/debug/src/serialport/
+    LIBS += -L$$PWD/libs/build/qtserialport/lib/
+    LIBS += -lQtSerialPort
+} else {
+    LIBS += -L$$PWD/libs/build/qtserialport/debug/src/serialport/
+    LIBS += -L$$PWD/libs/build/qtserialport/lib/
+    LIBS += -lQtSerialPort
+
+}
+
+
+
 
 #exists( $$PWD/libs/PythonQt3.0/src/PythonQt.h ) {
     #message(found python windows)

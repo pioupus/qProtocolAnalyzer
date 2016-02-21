@@ -2,7 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include <QtSerialPort/QSerialPortInfo>
-
+#include <QDebug>
 #include <QFormLayout>
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -11,7 +11,6 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     refreshTabs();
-
 }
 
 MainWindow::~MainWindow()
@@ -20,24 +19,29 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::refreshTabs(void){
+    int i = 0;
     ui->tabWidget->clear();
+    clearSerialPorts();
 #if 0
     for(int i=0;i<3; i++){
-        QWidget* newtab = createTabPage();
+        QWidget* newtab = createTabPage(i);
         ui->tabWidget->addTab(newtab,QString("hallo"));
+        QSerialPort* serialport = new QSerialPort();
+        serialPortList.append(serialport);
     }
 #else
     foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
-        ui->tabWidget->addTab(ui->tab,info.portName());
-
-
-        // Example use QSerialPort
-
+        QWidget* newtab = createTabPage(i);
+        ui->tabWidget->addTab(newtab,info.portName());
+        QSerialPort* serialport = new QSerialPort();
+        serialPortList.append(serialport);
+        i++;
     }
 #endif
+
 }
 
-QWidget *MainWindow::createTabPage()
+QWidget *MainWindow::createTabPage(int tabIndex)
 {
     QWidget* result = new QWidget(ui->tabWidget);
     QWidget* colParent = new QWidget(result);
@@ -56,9 +60,12 @@ QWidget *MainWindow::createTabPage()
     btnConnect->setText("Connect");
     btnConnect->setAccessibleName("btnConnect");
 
-    comBaud->setAccessibleName("comBaud");
-    comDataBits->setAccessibleName("comDataBits");
-    comStopBits->setAccessibleName("comStopBits");
+    btnConnect->setProperty("tabIndex",tabIndex);
+    btnConnect->setProperty("connected",false);
+
+    comBaud->setObjectName("comBaud");
+    comDataBits->setObjectName("comDataBits");
+    comStopBits->setObjectName("comStopBits");
 
     QStringList bdl;
     bdl << "75" << "300" << "1200" << "2400" << "4800" << "9600" << "14400" << "19200" << "28800" << "38400" << "57600" << "115200";
@@ -72,7 +79,7 @@ QWidget *MainWindow::createTabPage()
     comDataBits->setCurrentIndex(comDataBits->count()-1);
 
     QStringList stopl;
-    stopl << "1" << "2";
+    stopl << "1" << "1.5" << "2";
     comStopBits->addItems(stopl);
     comStopBits->setCurrentIndex(0);
 
@@ -81,5 +88,76 @@ QWidget *MainWindow::createTabPage()
 
     hbox->addStretch();
 
+    connect(btnConnect,SIGNAL(clicked()),this,SLOT(on_btnConnectClicked()));
     return result;
 }
+
+void MainWindow::clearSerialPorts(){
+    foreach (QSerialPort* P, serialPortList) {
+        delete P;
+    }
+}
+
+QSerialPort::StopBits MainWindow::stopBitDescriptionToStopBit(QString desc){
+    if(desc == "1")
+        return QSerialPort::OneStop;
+    if(desc == "1.5")
+        return QSerialPort::OneAndHalfStop;
+    if(desc == "2")
+        return QSerialPort::TwoStop;
+    return QSerialPort::UnknownStopBits;
+}
+
+void MainWindow::on_btnConnectClicked(){
+
+    QPushButton* button = qobject_cast<QPushButton*>(sender());
+    //qDebug() << "test";
+    bool shallBeOpened = true;
+    if( button != NULL )
+    {
+       if (button->property("connected").toBool() == true){
+           button->setText("Connect");
+           button->setProperty("connected",false);
+           shallBeOpened = false;
+       }else{
+           button->setText("Disconnect");
+           button->setProperty("connected",true);
+           shallBeOpened = true;
+       }
+       int tabIndex = button->property("tabIndex").toInt();
+       QSerialPort* serialport = serialPortList[tabIndex];
+
+       if (shallBeOpened){
+           serialport->setPortName(ui->tabWidget->tabText(tabIndex));
+
+           QComboBox* comBaud = ui->tabWidget->widget(tabIndex)->findChild<QComboBox*>("comBaud");
+           int baudrate = comBaud->currentText().toInt();
+           serialport->setBaudRate(baudrate);
+
+           QComboBox* comData = ui->tabWidget->widget(tabIndex)->findChild<QComboBox*>("comDataBits");
+           int dataBits = comData->currentText().toInt();
+           serialport->setDataBits((QSerialPort::DataBits)dataBits);
+
+           QComboBox* comStop = ui->tabWidget->widget(tabIndex)->findChild<QComboBox*>("comStopBits");
+           QSerialPort::StopBits stopBits = stopBitDescriptionToStopBit(comStop->currentText());
+           serialport->setStopBits(stopBits);
+
+           qDebug() << "open" << serialport->portName() << baudrate << dataBits << stopBits;
+           serialport->open(QIODevice::ReadOnly);
+           if (serialport->isOpen()){
+               qDebug() << "opened";
+           }else{
+               qDebug() << "still closed";
+           }
+       }else{
+           qDebug() << "close" << serialport->portName();
+           serialport->close();
+           if (serialport->isOpen()){
+               qDebug() << "still opened";
+           }else{
+               qDebug() << "closed";
+           }
+       }
+    }
+}
+

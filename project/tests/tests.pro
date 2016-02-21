@@ -44,7 +44,7 @@ export(copydata.commands)
 
 QMAKE_EXTRA_TARGETS +=   first copydata
 
-LIBS +=  -lqTestProjectTemplateApp
+#LIBS +=  -lqTestProjectTemplateApp
 
 
 #
