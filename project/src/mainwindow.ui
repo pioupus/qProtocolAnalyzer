@@ -243,19 +243,6 @@
            </property>
           </item>
          </widget>
-         <widget class="QPushButton" name="pushButton">
-          <property name="geometry">
-           <rect>
-            <x>470</x>
-            <y>30</y>
-            <width>81</width>
-            <height>23</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>PushButton</string>
-          </property>
-         </widget>
         </widget>
         <widget class="QWidget" name="tab_2">
          <attribute name="title">
@@ -265,7 +252,27 @@
        </widget>
       </item>
       <item>
-       <widget class="QTreeView" name="treeView"/>
+       <widget class="QTreeWidget" name="treeWidget">
+        <property name="uniformRowHeights">
+         <bool>true</bool>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+        <property name="columnCount">
+         <number>2</number>
+        </property>
+        <column>
+         <property name="text">
+          <string notr="true">Zeit</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Daten</string>
+         </property>
+        </column>
+       </widget>
       </item>
      </layout>
     </item>

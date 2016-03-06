@@ -10,15 +10,16 @@ CONFIG( debug, debug|release ) {
 }
 
 
-
 TEMPLATE = lib
 
 DEFINES += EXPORT_LIBRARY
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    serialnode.cpp
 SOURCES += mainwindow.cpp
 
-HEADERS += mainwindow.h
+HEADERS += mainwindow.h \
+    serialnode.h
 
 
 
