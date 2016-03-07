@@ -4,7 +4,10 @@ QT = gui core network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+greaterThan(QT_MAJOR_VERSION, 4): QT += serialport
+
 QMAKE_CXXFLAGS += -std=c++11
+#CONFIG += c++14
 
 SRC_DIR = $$PWD
 
@@ -20,17 +23,20 @@ LIBS += -L$$PWD/libs/build/googletest/googlemock/gtest
 
 
 INCLUDEPATH += $$PWD/libs/build/qtserialport/debug/include/
-CONFIG( debug, debug|release ) {
-    LIBS += -L$$PWD/libs/build/qtserialport/debug/src/serialport/
-    LIBS += -L$$PWD/libs/build/qtserialport/lib/
-    LIBS += -lQtSerialPort
-} else {
-    LIBS += -L$$PWD/libs/build/qtserialport/debug/src/serialport/
-    LIBS += -L$$PWD/libs/build/qtserialport/lib/
-    LIBS += -lQtSerialPort
 
+greaterThan(5, QT_MAJOR_VERSION){
+    #working with QT4 or less?
+    CONFIG( debug, debug|release ) {
+        LIBS += -L$$PWD/libs/build/qtserialport/debug/src/serialport/
+        LIBS += -L$$PWD/libs/build/qtserialport/lib/
+        LIBS += -lQtSerialPort
+    } else {
+        LIBS += -L$$PWD/libs/build/qtserialport/release/src/serialport/
+        LIBS += -L$$PWD/libs/build/qtserialport/lib/
+        LIBS += -lQtSerialPort
+
+    }
 }
-
 
 
 
@@ -64,6 +70,6 @@ CONFIG( debug, debug|release ) {
 
 
 
-CONFIG += c++14
+
 CONFIG += warn
 QMAKE_CXXFLAGS += -Werror

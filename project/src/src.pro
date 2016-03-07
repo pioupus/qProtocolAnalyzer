@@ -14,12 +14,12 @@ TEMPLATE = lib
 
 DEFINES += EXPORT_LIBRARY
 
-SOURCES += main.cpp \
-    serialnode.cpp
+SOURCES += main.cpp
 SOURCES += mainwindow.cpp
+SOURCES += serialnode.cpp
 
-HEADERS += mainwindow.h \
-    serialnode.h
+HEADERS += mainwindow.h
+HEADERS += serialnode.h
 
 
 
