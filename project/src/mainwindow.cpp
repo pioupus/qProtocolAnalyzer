@@ -52,14 +52,15 @@ int MainWindow::insertColumn(QString name){
 
     }else{
 
+        QTreeWidgetItem* header = ui->treeWidget->headerItem();
         portToColMap.insert(name,columnCount);
+        header->setText(columnCount,name);
         columnCount++;
         ui->treeWidget->setColumnCount(columnCount);
         ui->treeWidget->resizeColumnToContents(0);
         for (int i= 0;i< ui->treeWidget->columnCount();i++){
-            ui->treeWidget->setColumnWidth(i,100);
+            ui->treeWidget->setColumnWidth(i,150);
         }
-
         return columnCount-1;
     }
 }

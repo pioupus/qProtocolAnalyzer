@@ -41,6 +41,24 @@ void SerialNode::setEscapeRegEx(QString escaping)
 
 void SerialNode::setEscapeChar(QString escaping)
 {
+    int i = escaping.indexOf("\\n");
+    while (i > -1){
+
+        escaping.replace(i,2,"\n");
+        i = escaping.indexOf("\\n");
+    }
+    i = escaping.indexOf("\\r");
+    while (i > -1){
+
+        escaping.replace(i,2,"\r");
+        i = escaping.indexOf("\\r");
+    }
+    i = escaping.indexOf("\\t");
+    while (i > -1){
+
+        escaping.replace(i,2,"\t");
+        i = escaping.indexOf("\\t");
+    }
     escapeString = escaping;
 }
 
@@ -89,8 +107,17 @@ void SerialNode::addLine(){
     if (nodeAppearance == nodeAppearence_t::hex){
         line = lineBufferHex;
     }else{
-        line =  lineBufferBin;
+        line = "";
+        for (int i = 0;i<lineBufferBin.count();i++){
+            if ((0x20 <= lineBufferBin.at(i)) && (lineBufferBin.at(i) < 0x7F)){
+                line += lineBufferBin.at(i);
+            }else{
+                line += '\\'+QString("%1 ").arg((uint8_t)(lineBufferBin.at(i)), 2, 16, QChar('0'));
+            }
+
+        }
     }
+
 
     QString s = inComingTime.toString("MM.dd HH:mm:ss.zzz");
     MainWindow* mainwin = qobject_cast<MainWindow*>(parent());
@@ -109,6 +136,7 @@ void SerialNode::on_readyRead()
     QByteArray inbuffer = serialport->readAll();
     if (inbuffer.count() == 512)
         qDebug() << "Rechner langsam";
+    qDebug() << "reading: " << inbuffer.count();
     for (int i = 0;i<inbuffer.count();i++){
         if (oldByte==inbuffer[i]){
             //qDebug() << "gleiche bytes" << i << "von" << inbuffer.count();
@@ -116,7 +144,7 @@ void SerialNode::on_readyRead()
         oldByte=inbuffer[i];
         lineBufferBin.append(inbuffer[i]);
         if (nodeAppearance == nodeAppearence_t::hex){
-            lineBufferHex.append(QString("%1 ").arg(inbuffer[i], 2, 16, QChar('0')));
+            lineBufferHex.append(QString("%1 ").arg((uint8_t)(inbuffer.at(i)), 2, 16, QChar('0')));
         }
 
         if (isNewLine(lineBufferBin)){
@@ -124,7 +152,7 @@ void SerialNode::on_readyRead()
         }
     }
     if (lineBufferBin.count()){
-        timeoutTimer->start(10);
+        timeoutTimer->start(300);
     }
 
 }
