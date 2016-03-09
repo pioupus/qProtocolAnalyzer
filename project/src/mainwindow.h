@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QWidget>
 #include <QMap>
+#include <QFile>
 
 #include "serialnode.h"
 
@@ -24,23 +25,44 @@ public slots:
     void on_btnConnectClicked();
     void on_readyRead();
 
+private slots:
+
+
+
+    void on_cmb_currentIndexChanged(int arg1);
+    //void on_cmb_editTextChanged(const QString &arg1);
+
+    void on_spinBox_valueChanged(int arg1);
+
+    void on_lineEdit_textChanged(const QString &arg1);
+
+    void on_radioButton_toggled(bool checked);
+
+    void on_actionPause_triggered();
+
 private:
     Ui::MainWindow *ui;
 
     void refreshTabs(void);
 
-    QWidget* createTabPage(int tabIndex);
+    QWidget* createTabPage(int tabIndex, QString COMName);
 
     void clearSerialPorts();
     QList<SerialNode*> serialPortList;
 
 
     QSerialPort::StopBits stopBitDescriptionToStopBit(QString desc);
+    void updateDisplayParamters(int tabIndex);
 
     QMap<QString, int> portToColMap;
     int columnCount;
     int insertColumn(QString name);
     bool isNewLine(QSerialPort *serPort, int count, QString inString);
+    void beginNewDumpFile();
+    QFile fileDisplay;
+    QString fileName;
+    int fileIndex;
+    int fileRows;
 
 };
 

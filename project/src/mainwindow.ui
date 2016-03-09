@@ -252,24 +252,28 @@
        </widget>
       </item>
       <item>
-       <widget class="QTreeWidget" name="treeWidget">
-        <property name="uniformRowHeights">
-         <bool>true</bool>
+       <widget class="QTableWidget" name="tableWidget">
+        <property name="font">
+         <font>
+          <family>Courier New</family>
+          <pointsize>10</pointsize>
+         </font>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
         </property>
-        <property name="columnCount">
-         <number>2</number>
-        </property>
+        <attribute name="verticalHeaderVisible">
+         <bool>false</bool>
+        </attribute>
+        <attribute name="verticalHeaderDefaultSectionSize">
+         <number>28</number>
+        </attribute>
+        <attribute name="verticalHeaderMinimumSectionSize">
+         <number>13</number>
+        </attribute>
         <column>
          <property name="text">
-          <string notr="true">Zeit</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Daten</string>
+          <string>time</string>
          </property>
         </column>
        </widget>
@@ -295,8 +299,15 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="separator"/>
+   <addaction name="actionPause"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <action name="actionPause">
+   <property name="text">
+    <string>Pause</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>

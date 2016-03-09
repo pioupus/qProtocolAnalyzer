@@ -1,6 +1,7 @@
 #include "serialnode.h"
 #include "mainwindow.h"
 #include <QDateTime>
+
 #include <QDebug>
 SerialNode::SerialNode(QObject *parent) :
     QObject(parent)
@@ -9,6 +10,7 @@ SerialNode::SerialNode(QObject *parent) :
     timeoutTimer = new QTimer(this);
     connect(serialport,SIGNAL(readyRead()),this,SLOT(on_readyRead()));
     connect(timeoutTimer,SIGNAL(timeout()),this,SLOT(on_timeout()));
+    pause = false;
 }
 
 SerialNode::~SerialNode()
@@ -36,42 +38,49 @@ void SerialNode::setEscaping(nodeEscaping_t escaping)
 
 void SerialNode::setEscapeRegEx(QString escaping)
 {
-    escapeString = escaping;
+    escapeStringDisplay = escaping;
 }
 
 void SerialNode::setEscapeChar(QString escaping)
 {
-    int i = escaping.indexOf("\\n");
-    while (i > -1){
 
-        escaping.replace(i,2,"\n");
-        i = escaping.indexOf("\\n");
-    }
-    i = escaping.indexOf("\\r");
-    while (i > -1){
+    escapeStringRaw.clear();
+    escapeStringDisplay.clear();
 
-        escaping.replace(i,2,"\r");
-        i = escaping.indexOf("\\r");
+    int index = 0;
+    while (index<escaping.count()){
+        QString mid = escaping.mid(index);
+        if (mid.startsWith("\\n")){
+            escapeStringRaw.append('\n');
+            escapeStringDisplay.append("\\0A");
+            index+=2;
+        }else if(mid.startsWith("\\r")){
+            escapeStringRaw.append('\r');
+            escapeStringDisplay.append("\\0D");
+            index+=2;
+        }else{
+            escapeStringRaw.append(mid.at(0));
+            escapeStringDisplay.append(mid.at(0));
+            index+=1;
+        }
     }
-    i = escaping.indexOf("\\t");
-    while (i > -1){
-
-        escaping.replace(i,2,"\t");
-        i = escaping.indexOf("\\t");
-    }
-    escapeString = escaping;
 }
 
 void SerialNode::setEscapeLength(int escapeLength)
 {
-   this->escapeLength = escapeLength;
+    this->escapeLength = escapeLength;
 }
 
-bool SerialNode::isNewLine(const QByteArray lineBin){
+void SerialNode::setPause(bool pause)
+{
+    this->pause = pause;
+}
+
+bool SerialNode::isNewLine(const QByteArray lineRaw, const QString lineString){
     bool result = false;
     switch(nodeEscaping){
     case nodeEscaping_t::byLength:
-        if (lineBin.length() == escapeLength){
+        if (lineRaw.length() >= escapeLength){
             result = true;
         }else{
 
@@ -79,20 +88,34 @@ bool SerialNode::isNewLine(const QByteArray lineBin){
         break;
     case nodeEscaping_t::byEscapeCharacter:
         {
-            if(escapeString.count() > lineBin.count())
+            int comparePosStart;
+            QByteArray escapeString_;
+            QByteArray lineToTest;
+            if (nodeAppearance == nodeAppearence_t::hex){
+                escapeString_ = escapeStringRaw;
+                lineToTest = lineRaw;
+            }else{
+                escapeString_ = escapeStringDisplay.toLocal8Bit();
+                lineToTest = lineString.toLocal8Bit();
+            }
+            comparePosStart = lineToTest.count();
+            comparePosStart -= escapeString_.count();
+
+            if(comparePosStart < 0)
                 break;
 
             bool found = true;
+            for (int i = 0; i<escapeString_.count(); i++) {
 
-            for (int i = 0; i<escapeString.count(); i++) {
-                QChar l=escapeString[i];
-                QChar r=lineBin[lineBin.count()-escapeString.count()+i];
+                uint8_t l=escapeString_[i];
+                uint8_t r=lineToTest[comparePosStart+i];
                 if(l != r){
                     found = false;
                     break;
                 }
-                result = found;
+
             }
+            result = found;
         }
         break;
     case nodeEscaping_t::byRegEx:
@@ -103,55 +126,49 @@ bool SerialNode::isNewLine(const QByteArray lineBin){
 }
 
 void SerialNode::addLine(){
-    QString line;
-    if (nodeAppearance == nodeAppearence_t::hex){
-        line = lineBufferHex;
-    }else{
-        line = "";
-        for (int i = 0;i<lineBufferBin.count();i++){
-            if ((0x20 <= lineBufferBin.at(i)) && (lineBufferBin.at(i) < 0x7F)){
-                line += lineBufferBin.at(i);
-            }else{
-                line += '\\'+QString("%1 ").arg((uint8_t)(lineBufferBin.at(i)), 2, 16, QChar('0'));
-            }
-
-        }
-    }
-
-
     QString s = inComingTime.toString("MM.dd HH:mm:ss.zzz");
     MainWindow* mainwin = qobject_cast<MainWindow*>(parent());
-    mainwin->addNewEntry(s,line,colIndex);
+    mainwin->addNewEntry(s,lineBufferDisplay,colIndex);
 
-    lineBufferBin.clear();
-    lineBufferHex.clear();
+    lineBufferRaw.clear();
+    lineBufferDisplay.clear();
 
 }
 
 void SerialNode::on_readyRead()
 {
     static int oldByte=0;
+
     inComingTime = QDateTime::currentDateTime ();
     timeoutTimer->stop();
     QByteArray inbuffer = serialport->readAll();
+    if (pause)
+        return;
     if (inbuffer.count() == 512)
         qDebug() << "Rechner langsam";
-    qDebug() << "reading: " << inbuffer.count();
+    //qDebug() << "reading: " << inbuffer.count();
     for (int i = 0;i<inbuffer.count();i++){
-        if (oldByte==inbuffer[i]){
+        if (oldByte==inbuffer.at(i)){
             //qDebug() << "gleiche bytes" << i << "von" << inbuffer.count();
         }
-        oldByte=inbuffer[i];
-        lineBufferBin.append(inbuffer[i]);
+        oldByte=inbuffer.at(i);
+        lineBufferRaw.append(inbuffer.at(i));
+
         if (nodeAppearance == nodeAppearence_t::hex){
-            lineBufferHex.append(QString("%1 ").arg((uint8_t)(inbuffer.at(i)), 2, 16, QChar('0')));
+            lineBufferDisplay.append(QString("%1 ").arg((uint8_t)(inbuffer.at(i)), 2, 16, QChar('0')).toUpper());
+        }else if(nodeAppearance == nodeAppearence_t::ascii){
+            if ((0x20 <= inbuffer.at(i)) && (inbuffer.at(i) < 0x7F)){
+                lineBufferDisplay += inbuffer.at(i);
+            }else{
+                lineBufferDisplay += '\\'+QString("%1").arg((uint8_t)(inbuffer.at(i)), 2, 16, QChar('0')).toUpper();
+            }
         }
 
-        if (isNewLine(lineBufferBin)){
+        if (isNewLine(lineBufferRaw,lineBufferDisplay)){
             addLine();
         }
     }
-    if (lineBufferBin.count()){
+    if (lineBufferRaw.count()){
         timeoutTimer->start(300);
     }
 

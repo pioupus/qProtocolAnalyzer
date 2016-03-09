@@ -25,6 +25,7 @@ public:
     void setEscapeChar(QString escaping);
     void setEscapeLength(int escapeLength);
 
+    void setPause(bool pause);
    QSerialPort* serialport;
 
 signals:
@@ -34,19 +35,21 @@ public slots:
     void on_timeout();
 
 private:
-    bool isNewLine(const QByteArray lineBin);
+    bool isNewLine(const QByteArray lineRaw, const QString lineString);
 
     int colIndex;
     nodeAppearence_t nodeAppearance;
-    QString escapeString;
+    QString escapeStringDisplay;
+    QByteArray escapeStringRaw;
     nodeEscaping_t nodeEscaping;
-    QByteArray lineBufferBin;
-    QString lineBufferHex;
+    QByteArray lineBufferRaw;
+    QString lineBufferDisplay;
     QTimer* timeoutTimer;
     int escapeLength;
 
     QDateTime inComingTime;
     void addLine();
+    bool pause;
 
 };
 

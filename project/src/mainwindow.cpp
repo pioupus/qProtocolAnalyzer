@@ -8,18 +8,82 @@
 #include <QRadioButton>
 #include <QSpinBox>
 #include <QLineEdit>
+#include <QSettings>
+#include <QDir>
+#include <QMessageBox>
+
+const int MAXFILEROWS = 100*1000;
+const QString SETTINGS_FILE_NAME = QDir::currentPath()+QDir::separator()+"protanalyzer.ini";
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+
     ui->setupUi(this);
+
+    QSettings settings(SETTINGS_FILE_NAME, QSettings::IniFormat );
+
+    QString basePath = settings.value("ExportFilePath",QDir::currentPath()+QDir::separator()+"export").toString();
+    settings.setValue("ExportFilePath",QDir::currentPath()+QDir::separator()+"export");
+
+    QString dateStr =  QDateTime::currentDateTime().toString("MM_dd__HH_mm_ss_");
+
     columnCount = 1;
     refreshTabs();
+    fileIndex=0;
+    fileRows=0;
+    if (!basePath.endsWith(QDir::separator())){
+        basePath+= QDir::separator();
+    }
+    fileName = basePath+dateStr;
+    beginNewDumpFile();
+
 }
 
 MainWindow::~MainWindow()
 {
+
+
+
+    for(int i=0;i<ui->tabWidget->count();i++){
+        QWidget* widget = ui->tabWidget->widget(i);
+
+        QRadioButton*  radByLength = widget->findChild<QRadioButton*>("radByLength");
+        QSpinBox* spinNLbyLenth = widget->findChild<QSpinBox*>("spinNLbyLenth");
+        QRadioButton *radByEscape = widget->findChild<QRadioButton*>("radByEscape");
+        QLineEdit* edtEscape = widget->findChild<QLineEdit*>("edtEscape");
+        QRadioButton*  radByRegEx = widget->findChild<QRadioButton*>("radByRegEx");
+        QLineEdit* edtRegEx = widget->findChild<QLineEdit*>("edtRegEx");
+
+        QComboBox* comBaud = widget->findChild<QComboBox*>("comBaud");
+        QComboBox* comDataBits = widget->findChild<QComboBox*>("comDataBits");
+        QComboBox* comStopBits = widget->findChild<QComboBox*>("comStopBits");
+
+        QComboBox* comFormat = widget->findChild<QComboBox*>("comFormat");
+
+        QSettings settings(SETTINGS_FILE_NAME, QSettings::IniFormat );
+        settings.beginGroup("COMName"+ui->tabWidget->tabText(i));
+
+        settings.setValue("Display Format",comFormat->currentIndex());
+        settings.setValue("COM Stop",comStopBits->currentIndex());
+        settings.setValue("COM DataLength",comDataBits->currentIndex());
+        settings.setValue("COM Baud",comBaud->currentIndex());
+        settings.setValue("Display Escape Length",spinNLbyLenth->value());
+        settings.setValue("Display Escape String",edtEscape->text());
+        settings.setValue("Display Escape Regex",edtRegEx->text());
+        int val=0;
+        if (radByLength->isChecked()){
+            val = 0;
+        }else if (radByEscape->isChecked()){
+            val = 1;
+        }else if (radByRegEx->isChecked()){
+            val = 2;
+        }
+        settings.setValue("Display Escape type",val);
+
+        settings.endGroup();
+        }
     delete ui;
 }
 
@@ -36,7 +100,7 @@ void MainWindow::refreshTabs(void){
     }
 #else
     foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
-        QWidget* newtab = createTabPage(i);
+        QWidget* newtab = createTabPage(i,info.portName());
         ui->tabWidget->addTab(newtab,info.portName());
         SerialNode* serialNode = new SerialNode(this);
         serialPortList.append(serialNode);
@@ -51,22 +115,18 @@ int MainWindow::insertColumn(QString name){
         return portToColMap.value(name);
 
     }else{
-
-        QTreeWidgetItem* header = ui->treeWidget->headerItem();
+        int i = ui->tableWidget->columnCount() ;
+        ui->tableWidget->insertColumn(i);
         portToColMap.insert(name,columnCount);
-        header->setText(columnCount,name);
+        ui->tableWidget->setHorizontalHeaderItem(i, new QTableWidgetItem(name));
         columnCount++;
-        ui->treeWidget->setColumnCount(columnCount);
-        ui->treeWidget->resizeColumnToContents(0);
-        for (int i= 0;i< ui->treeWidget->columnCount();i++){
-            ui->treeWidget->setColumnWidth(i,150);
-        }
         return columnCount-1;
     }
 }
 
-QWidget *MainWindow::createTabPage(int tabIndex)
+QWidget *MainWindow::createTabPage(int tabIndex, QString COMName)
 {
+    (void)COMName;
     QWidget* result = new QWidget(ui->tabWidget);
     QWidget* colCOM = new QWidget(result);
     QWidget* colFormat = new QWidget(result);
@@ -122,19 +182,11 @@ QWidget *MainWindow::createTabPage(int tabIndex)
     comBaud->setObjectName("comBaud");
     comDataBits->setObjectName("comDataBits");
     comStopBits->setObjectName("comStopBits");
-
     comFormat->setObjectName("comFormat");
-
-    spinNLbyLenth->setValue(8);
     spinNLbyLenth->setObjectName("spinNLbyLenth");
-
-    radByLength->setChecked(true);
     radByLength->setObjectName("radByLength");
-
-    edtEscape->setText("\\r\\n");
     edtEscape->setObjectName("edtEscape");
     radByEscape->setObjectName("radByEscape");
-
     edtRegEx->setObjectName("edtRegEx");
     radByRegEx->setObjectName("radByRegEx");
 
@@ -142,22 +194,20 @@ QWidget *MainWindow::createTabPage(int tabIndex)
     bdl << "75" << "300" << "1200" << "2400" << "4800" << "9600" << "14400" << "19200" << "28800" << "38400" << "57600" << "115200";
     comBaud->addItems(bdl);
     comBaud->setEditable(true);
-    comBaud->setCurrentIndex(comBaud->count()-1);
+
 
     QStringList dtal;
     dtal << "5" << "6" << "7" << "8";
     comDataBits->addItems(dtal);
-    comDataBits->setCurrentIndex(comDataBits->count()-1);
+
 
     QStringList stopl;
     stopl << "1" << "1.5" << "2";
     comStopBits->addItems(stopl);
-    comStopBits->setCurrentIndex(0);
 
     QStringList comFormatl;
     comFormatl << "HEX" << "ASCII";
     comFormat->addItems(comFormatl);
-    comFormat->setCurrentIndex(0);
 
     hbox->addWidget(btnConnect);
     hbox->addWidget(colCOM);
@@ -165,8 +215,67 @@ QWidget *MainWindow::createTabPage(int tabIndex)
 
     hbox->addStretch();
 
+    QSettings settings(SETTINGS_FILE_NAME, QSettings::IniFormat );
+    settings.beginGroup("COMName"+COMName);
+    comFormat->setCurrentIndex(settings.value("Display Format",0).toInt());
+    comStopBits->setCurrentIndex(settings.value("COM Stop",0).toInt());
+    comDataBits->setCurrentIndex(settings.value("COM DataLength",comDataBits->count()-1).toInt());
+    comBaud->setCurrentIndex(settings.value("COM Baud",comBaud->count()-1).toInt());
+    spinNLbyLenth->setValue(settings.value("Display Escape Length",8).toInt());
+    edtEscape->setText(settings.value("Display Escape String","\\r\\n").toString());
+    edtRegEx->setText(settings.value("Display Escape Regex","").toString());
+    int val = settings.value("Display Escape type",0).toInt();
+    if (val == 0){
+        radByLength->setChecked(true);
+    }else if (val == 1){
+        radByEscape->setChecked(true);
+    }else{
+        radByRegEx->setChecked(true);
+    }
+    settings.endGroup();
     connect(btnConnect,SIGNAL(clicked()),this,SLOT(on_btnConnectClicked()));
+    connect(comFormat,SIGNAL(currentIndexChanged(int)),this,SLOT(on_cmb_currentIndexChanged(int)));
+    connect(edtRegEx,SIGNAL(textChanged(const QString)),this,SLOT(on_lineEdit_textChanged(const QString)));
+    connect(edtEscape,SIGNAL(textChanged(const QString)),this,SLOT(on_lineEdit_textChanged(const QString)));
+    connect(spinNLbyLenth,SIGNAL(valueChanged(int)),this,SLOT(on_spinBox_valueChanged(int)));
+    connect(radByEscape,SIGNAL(toggled(bool)),this,SLOT(on_radioButton_toggled(bool)));
+    connect(radByLength,SIGNAL(toggled(bool)),this,SLOT(on_radioButton_toggled(bool)));
+    connect(radByRegEx,SIGNAL(toggled(bool)),this,SLOT(on_radioButton_toggled(bool)));
+
+
     return result;
+}
+
+void MainWindow::on_cmb_currentIndexChanged(int arg1)
+{
+    (void)arg1;
+    updateDisplayParamters(ui->tabWidget->currentIndex());
+}
+#if 0
+void MainWindow::on_cmb_editTextChanged(const QString &arg1)
+{
+    (void)arg1;
+    updateDisplayParamters(ui->tabWidget->currentIndex());
+}
+#endif
+void MainWindow::on_spinBox_valueChanged(int arg1)
+{
+    (void)arg1;
+    updateDisplayParamters(ui->tabWidget->currentIndex());
+}
+
+void MainWindow::on_lineEdit_textChanged(const QString &arg1)
+{
+
+    (void)arg1;
+    updateDisplayParamters(ui->tabWidget->currentIndex());
+}
+
+void MainWindow::on_radioButton_toggled(bool checked)
+{
+
+    (void)checked;
+    updateDisplayParamters(ui->tabWidget->currentIndex());
 }
 
 void MainWindow::clearSerialPorts(){
@@ -183,6 +292,32 @@ QSerialPort::StopBits MainWindow::stopBitDescriptionToStopBit(QString desc){
     if(desc == "2")
         return QSerialPort::TwoStop;
     return QSerialPort::UnknownStopBits;
+}
+
+void MainWindow::updateDisplayParamters(int tabIndex){
+    QRadioButton* radByLength = ui->tabWidget->widget(tabIndex)->findChild<QRadioButton*>("radByLength");
+    QRadioButton* radByEscape = ui->tabWidget->widget(tabIndex)->findChild<QRadioButton*>("radByEscape");
+    QRadioButton* radByRegEx = ui->tabWidget->widget(tabIndex)->findChild<QRadioButton*>("radByRegEx");
+
+    if (radByLength->isChecked()){
+         QSpinBox* spinNLbyLenth = ui->tabWidget->widget(tabIndex)->findChild<QSpinBox*>("spinNLbyLenth");
+         serialPortList[tabIndex]->setEscaping(nodeEscaping_t::byLength);
+         serialPortList[tabIndex]->setEscapeLength(spinNLbyLenth->value());
+    }
+    if (radByEscape->isChecked()){
+         QLineEdit* edtEscape = ui->tabWidget->widget(tabIndex)->findChild<QLineEdit*>("edtEscape");
+         serialPortList[tabIndex]->setEscaping(nodeEscaping_t::byEscapeCharacter);
+         serialPortList[tabIndex]->setEscapeChar(edtEscape->text());
+    }
+    if (radByRegEx->isChecked()){
+        QLineEdit* edtRegEx = ui->tabWidget->widget(tabIndex)->findChild<QLineEdit*>("edtRegEx");
+        serialPortList[tabIndex]->setEscaping(nodeEscaping_t::byRegEx);
+        serialPortList[tabIndex]->setEscapeRegEx(edtRegEx->text());
+
+    }
+    QComboBox* comFormat = ui->tabWidget->widget(tabIndex)->findChild<QComboBox*>("comFormat");
+    bool usehex = comFormat->currentIndex()==0;
+    serialPortList[tabIndex]->setAppearance(usehex);
 }
 
 void MainWindow::on_btnConnectClicked(){
@@ -219,35 +354,14 @@ void MainWindow::on_btnConnectClicked(){
            QSerialPort::StopBits stopBits = stopBitDescriptionToStopBit(comStop->currentText());
            serialport->setStopBits(stopBits);
 
-           QComboBox* comFormat = ui->tabWidget->widget(tabIndex)->findChild<QComboBox*>("comFormat");
-           bool usehex = comFormat->currentIndex()==0;
+
            int colIndex = insertColumn(serialport->portName());
-           serialPortList[tabIndex]->setAppearance(usehex);
            serialPortList[tabIndex]->setColIndex(colIndex);
 
+            updateDisplayParamters(tabIndex);
 
 
 
-           QRadioButton* radByLength = ui->tabWidget->widget(tabIndex)->findChild<QRadioButton*>("radByLength");
-           QRadioButton* radByEscape = ui->tabWidget->widget(tabIndex)->findChild<QRadioButton*>("radByEscape");
-           QRadioButton* radByRegEx = ui->tabWidget->widget(tabIndex)->findChild<QRadioButton*>("radByRegEx");
-
-           if (radByLength->isChecked()){
-                QSpinBox* spinNLbyLenth = ui->tabWidget->widget(tabIndex)->findChild<QSpinBox*>("spinNLbyLenth");
-                serialPortList[tabIndex]->setEscaping(nodeEscaping_t::byLength);
-                serialPortList[tabIndex]->setEscapeLength(spinNLbyLenth->value());
-           }
-           if (radByEscape->isChecked()){
-                QLineEdit* edtEscape = ui->tabWidget->widget(tabIndex)->findChild<QLineEdit*>("edtEscape");
-                serialPortList[tabIndex]->setEscaping(nodeEscaping_t::byEscapeCharacter);
-                serialPortList[tabIndex]->setEscapeChar(edtEscape->text());
-           }
-           if (radByRegEx->isChecked()){
-               QLineEdit* edtRegEx = ui->tabWidget->widget(tabIndex)->findChild<QLineEdit*>("edtRegEx");
-               serialPortList[tabIndex]->setEscaping(nodeEscaping_t::byRegEx);
-               serialPortList[tabIndex]->setEscapeRegEx(edtRegEx->text());
-
-           }
            qDebug() << "open" << serialport->portName() << baudrate << dataBits << stopBits;
            serialport->open(QIODevice::ReadOnly);
            if (serialport->isOpen()){
@@ -269,15 +383,58 @@ void MainWindow::on_btnConnectClicked(){
 }
 
 
+void MainWindow::beginNewDumpFile(){
+    fileDisplay.close();
+    QString myfileName = fileName+QString("_%1").arg(fileIndex, 4, 10, QChar('0'))+".csv";
+    fileIndex++;
+    fileRows=0;
+    fileDisplay.setFileName(myfileName);
+    if (!fileDisplay.open(QIODevice::WriteOnly | QIODevice::Text)){
+        QMessageBox::warning(this, "ProtocolAnalyzer",
+                                      "Cant open file \""+myfileName+"\" for dumping data.",
+                                      QMessageBox::Ok ,
+                                      QMessageBox::Ok);
+    }
+}
 
 void MainWindow::addNewEntry(QString time, QString content, int colIndex)
 {
+    QTableWidgetItem *item_t=new QTableWidgetItem (time);
+    QTableWidgetItem *item_c=new QTableWidgetItem (content);
+
+    if (fileDisplay.isWritable()){
+        QString row = time;
+        for(int i=1; i<columnCount;i++){
+            if (i == colIndex){
+                row += ";\""+content+"\"";
+            }else{
+                row += ";\"\"";
+            }
+        }
+        row+="\n";
+
+        fileDisplay.write(row.toLocal8Bit(),row.length());
+        fileRows++;
+        if (fileRows > MAXFILEROWS){
+            beginNewDumpFile();
+        }
+    }
+    int rowindex = ui->tableWidget->rowCount() ;
+    if (rowindex > MAXFILEROWS){
+         ui->tableWidget->removeRow(0);
+         rowindex--;
+    }
+    ui->tableWidget->insertRow(rowindex);
+    ui->tableWidget->setItem(rowindex,0,item_t);
+    ui->tableWidget->setItem(rowindex,colIndex,item_c);
+#if 0
     QTreeWidgetItem *entry = new QTreeWidgetItem(ui->treeWidget);
     entry->setText(0,time);
     entry->setText(colIndex,content);
     // qDebug() << line;
     ui->treeWidget->addTopLevelItem(entry);
-    ui->treeWidget->scrollToBottom();
+#endif
+    ui->tableWidget->scrollToBottom();
 }
 
 
@@ -286,3 +443,26 @@ void MainWindow::on_readyRead()
 
 }
 
+
+
+
+void MainWindow::on_actionPause_triggered()
+{
+    bool pause;
+
+    if (ui->actionPause->property("resumt").toBool() == false){
+        ui->actionPause->setText("Resume");
+        ui->actionPause->setProperty("resumt",true);
+        pause = true;
+    }else{
+        ui->actionPause->setText("Pause");
+        ui->actionPause->setProperty("resumt",false);
+        pause = false;
+    }
+
+
+    for(int i=0;i< serialPortList.count(); i++){
+        serialPortList[i]->setPause(pause);
+    }
+
+}
