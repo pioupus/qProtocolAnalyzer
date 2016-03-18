@@ -12,7 +12,7 @@
 #include <QDir>
 #include <QMessageBox>
 
-const int MAXFILEROWS = 100*1000;
+const int MAXFILEROWS = 1000*1000;
 const QString SETTINGS_FILE_NAME = QDir::currentPath()+QDir::separator()+"protanalyzer.ini";
 
 MainWindow::MainWindow(QWidget *parent) :
