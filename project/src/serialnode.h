@@ -9,6 +9,7 @@
 #include <QtSerialPort/QSerialPort>
 
 #include"../libs/qRPCRuntimeParser/project/src/rpcruntime_protocol_description.h"
+#include"../libs/qRPCRuntimeParser/project/src/rpcruntime_decoder.h"
 
 enum class nodeAppearence_t { hex, ascii};
 enum class nodeEscaping_t { byLength, byEscapeCharacter, byRegEx};
@@ -28,9 +29,15 @@ public:
     void setEscapeChar(QString escaping);
     void setEscapeLength(int escapeLength);
 
-    RPCRunTimeProtocolDescription rpcinterpreter;
+    void setRPCDescriptionFileName(QString fn);
+    RPCRuntimeDecoder getPackageDecoder();
+    bool isUsingChannelCodec();
+
     void setPause(bool pause);
-   QSerialPort* serialport;
+    QSerialPort* serialport;
+
+
+
 
 signals:
 
@@ -41,6 +48,7 @@ public slots:
 private:
     bool isNewLine(const QByteArray lineRaw, const QString lineString);
 
+    RPCRunTimeProtocolDescription rpcinterpreter;
     int colIndex;
     nodeAppearence_t nodeAppearance;
     QString escapeStringDisplay;

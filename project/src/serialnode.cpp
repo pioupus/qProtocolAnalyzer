@@ -10,6 +10,7 @@ SerialNode::SerialNode(QObject *parent) :
     timeoutTimer = new QTimer(this);
     connect(serialport,SIGNAL(readyRead()),this,SLOT(on_readyRead()));
     connect(timeoutTimer,SIGNAL(timeout()),this,SLOT(on_timeout()));
+
     pause = false;
 }
 
@@ -71,6 +72,22 @@ void SerialNode::setEscapeLength(int escapeLength)
     this->escapeLength = escapeLength;
 }
 
+void SerialNode::setRPCDescriptionFileName(QString fn)
+{
+    rpcinterpreter.openProtocolDescription(fn);
+}
+
+RPCRuntimeDecoder SerialNode::getPackageDecoder()
+{
+    RPCRuntimeDecoder result(rpcinterpreter);
+    return result;
+}
+
+bool SerialNode::isUsingChannelCodec()
+{
+    return true;
+}
+
 void SerialNode::setPause(bool pause)
 {
     this->pause = pause;
@@ -128,7 +145,7 @@ bool SerialNode::isNewLine(const QByteArray lineRaw, const QString lineString){
 void SerialNode::addLine(){
     QString s = inComingTime.toString("MM.dd HH:mm:ss.zzz");
     MainWindow* mainwin = qobject_cast<MainWindow*>(parent());
-    mainwin->addNewEntry(s,lineBufferDisplay,colIndex);
+    mainwin->addNewEntry(s,lineBufferDisplay,lineBufferRaw, colIndex);
 
     lineBufferRaw.clear();
     lineBufferDisplay.clear();

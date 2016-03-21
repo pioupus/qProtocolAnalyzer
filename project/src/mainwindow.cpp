@@ -12,7 +12,7 @@
 #include <QDir>
 #include <QMessageBox>
 
-const int MAXFILEROWS = 1000*1000;
+const int MAXFILEROWS = 300*1000;
 const QString SETTINGS_FILE_NAME = QDir::currentPath()+QDir::separator()+"protanalyzer.ini";
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -104,6 +104,8 @@ void MainWindow::refreshTabs(void){
         ui->tabWidget->addTab(newtab,info.portName());
         SerialNode* serialNode = new SerialNode(this);
         serialPortList.append(serialNode);
+        //serialNode->setRPCDescriptionFileName("C:/Users/ark/entwicklung/eclipse_workspace/funksonde2_probe/modules/rpcBluetooth/doc/server/RPC_BLUETOOTH_cmd_sg2probe.xml");
+        serialNode->setRPCDescriptionFileName("C:/Users/ark/entwicklung/eclipse_workspace/funksonde2_probe/modules/rpcBluetooth/doc/client/RPC_BLUETOOTH_cmd_probe2sg.xml");
         i++;
     }
 #endif
@@ -397,7 +399,7 @@ void MainWindow::beginNewDumpFile(){
     }
 }
 
-void MainWindow::addNewEntry(QString time, QString content, int colIndex)
+void MainWindow::addNewEntry(QString time, QString content, QByteArray binData,  int colIndex)
 {
     QTableWidgetItem *item_t=new QTableWidgetItem (time);
     QTableWidgetItem *item_c=new QTableWidgetItem (content);
@@ -422,18 +424,15 @@ void MainWindow::addNewEntry(QString time, QString content, int colIndex)
     int rowindex = ui->tableWidget->rowCount() ;
     if (rowindex > MAXFILEROWS){
          ui->tableWidget->removeRow(0);
+         binaryDataList.removeFirst();
          rowindex--;
     }
+    QPair<int,QByteArray> binEntry = QPair<int,QByteArray>(colIndex,binData);
+    binaryDataList.append(binEntry);
     ui->tableWidget->insertRow(rowindex);
     ui->tableWidget->setItem(rowindex,0,item_t);
     ui->tableWidget->setItem(rowindex,colIndex,item_c);
-#if 0
-    QTreeWidgetItem *entry = new QTreeWidgetItem(ui->treeWidget);
-    entry->setText(0,time);
-    entry->setText(colIndex,content);
-    // qDebug() << line;
-    ui->treeWidget->addTopLevelItem(entry);
-#endif
+
     ui->tableWidget->scrollToBottom();
 }
 
@@ -465,4 +464,25 @@ void MainWindow::on_actionPause_triggered()
         serialPortList[i]->setPause(pause);
     }
 
+}
+
+void MainWindow::on_tableWidget_itemSelectionChanged()
+{
+
+    int row = ui->tableWidget->currentRow();
+   // int col = ui->tableWidget->currentColumn();
+    QPair<int,QByteArray> binEntry = binaryDataList[row];
+    //qDebug() << binEntry.second;
+    SerialNode* serialNode = serialPortList[binEntry.first];
+    RPCRuntimeDecoder decoder = serialNode->getPackageDecoder();
+    if (serialNode->isUsingChannelCodec()){
+        decoder.RPCDecodeChannelCodedData(binEntry.second);
+    }else{
+        decoder.RPCDecodeRPCData(binEntry.second);
+    }
+    ui->txtDecodeResult->clear();
+    QStringList report = decoder.getPrintableReport();
+    for (auto s : report){
+         ui->txtDecodeResult->appendPlainText(s);
+    }
 }

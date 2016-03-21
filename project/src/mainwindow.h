@@ -19,7 +19,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    void addNewEntry(QString time, QString content, int colIndex);
+    void addNewEntry(QString time, QString content, QByteArray binData, int colIndex);
 
 public slots:
     void on_btnConnectClicked();
@@ -39,6 +39,10 @@ private slots:
     void on_radioButton_toggled(bool checked);
 
     void on_actionPause_triggered();
+
+
+
+    void on_tableWidget_itemSelectionChanged();
 
 private:
     Ui::MainWindow *ui;
@@ -63,6 +67,8 @@ private:
     QString fileName;
     int fileIndex;
     int fileRows;
+
+    QList<QPair<int,QByteArray>> binaryDataList;
 
 };
 
