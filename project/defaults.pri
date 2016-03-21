@@ -1,6 +1,6 @@
 #include(libs/PythonQt3.0/build/python.prf)
 
-QT = gui core network
+QT = gui core network xml
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 

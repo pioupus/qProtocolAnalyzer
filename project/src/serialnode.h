@@ -6,6 +6,9 @@
 #include <QTimer>
 #include <QDateTime>
 #include <QtSerialPort/QSerialPort>
+#include <QtSerialPort/QSerialPort>
+
+#include"../libs/qRPCRuntimeParser/project/src/rpcruntime_protocol_description.h"
 
 enum class nodeAppearence_t { hex, ascii};
 enum class nodeEscaping_t { byLength, byEscapeCharacter, byRegEx};
@@ -25,6 +28,7 @@ public:
     void setEscapeChar(QString escaping);
     void setEscapeLength(int escapeLength);
 
+    RPCRunTimeProtocolDescription rpcinterpreter;
     void setPause(bool pause);
    QSerialPort* serialport;
 

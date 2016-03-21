@@ -1,5 +1,8 @@
 include(../defaults.pri)
 
+QPROTOCOL_INTERPRETER_PATH=../libs/qRPCRuntimeParser
+include($$QPROTOCOL_INTERPRETER_PATH/qProtocollInterpreter_static.pri)
+
 CONFIG( debug, debug|release ) {
     # debug
      TARGET = qTestProjectTemplateAppd
@@ -9,11 +12,7 @@ CONFIG( debug, debug|release ) {
 
 }
 
-QPROTOCOL_INTERPRETER_PATH=../libs/qRPCRuntimeParser
 
-
-
-include($$QPROTOCOL_INTERPRETER_PATH/qProtocollInterpreter_static.pri)
 
 TEMPLATE = lib
 
