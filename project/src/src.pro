@@ -9,6 +9,11 @@ CONFIG( debug, debug|release ) {
 
 }
 
+QPROTOCOL_INTERPRETER_PATH=../libs/qRPCRuntimeParser
+
+
+
+include($$QPROTOCOL_INTERPRETER_PATH/qProtocollInterpreter_static.pri)
 
 TEMPLATE = lib
 
