@@ -472,7 +472,6 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
     int row = ui->tableWidget->currentRow();
    // int col = ui->tableWidget->currentColumn();
     QPair<int,QByteArray> binEntry = binaryDataList[row];
-    //qDebug() << binEntry.second;
     SerialNode* serialNode = serialPortList[binEntry.first];
     RPCRuntimeDecoder decoder = serialNode->getPackageDecoder();
     if (serialNode->isUsingChannelCodec()){
@@ -480,9 +479,30 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
     }else{
         decoder.RPCDecodeRPCData(binEntry.second);
     }
-    ui->txtDecodeResult->clear();
-    QStringList report = decoder.getPrintableReport();
-    for (auto s : report){
-         ui->txtDecodeResult->appendPlainText(s);
-    }
+    ui->treeWidget->clear();
+    ui->treeWidget->insertTopLevelItems(0, decoder.getTreeWidgetReport(NULL));
+    ui->treeWidget->resizeColumnToContents(0);
+    ui->treeWidget->resizeColumnToContents(1);
+}
+
+void MainWindow::on_actionTestDecode_triggered()
+{
+    const uint8_t inBinData_array[] = {0x18 ,0x2b ,0x00 ,0x48 ,0x61 ,0x6c ,0x6c ,0x6f ,0x33 ,0x34 ,0x35 ,0x36 ,0x37 ,0x38 ,0x39 ,0x30,
+                                       0x31 ,0x32 ,0x33 ,0x34 ,0x35 ,0x36 ,0x37 ,0x34 ,0x38 ,0x39 ,0x30 ,0x31 ,0x32 ,0x33 ,0x34 ,0x35,
+                                       0x36 ,0x37 ,0x38 ,0x39 ,0x30 ,0x31 ,0x32 ,0x33 ,0x34 ,0x35 ,0x36 ,0x37 ,0x38 ,0x00 ,0x10 ,0x20,
+                                       0x01 ,0x11 ,0x21};
+    QByteArray inBinData = QByteArray((char*)inBinData_array, sizeof(inBinData_array));
+    RPCRunTimeProtocolDescription rpcinterpreter;
+    rpcinterpreter.openProtocolDescription("C:/Users/ark/entwicklung/qt/qProtocolInterpreter/project/tests/scripts/decodeTest_struct_int.xml");
+    RPCRuntimeDecoder decoder(rpcinterpreter);
+    decoder.RPCDecodeRPCData(inBinData);
+
+    ui->treeWidget->clear();
+    ui->treeWidget->insertTopLevelItems(0, decoder.getTreeWidgetReport(NULL));
+
+
+     ui->treeWidget->expandAll();
+
+     ui->treeWidget->resizeColumnToContents(0);
+     ui->treeWidget->resizeColumnToContents(1);
 }

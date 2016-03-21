@@ -278,10 +278,33 @@
         </column>
        </widget>
       </item>
+      <item>
+       <widget class="QTreeWidget" name="treeWidget">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>400</height>
+         </size>
+        </property>
+        <column>
+         <property name="text">
+          <string notr="true">fieldname</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>value</string>
+         </property>
+        </column>
+       </widget>
+      </item>
      </layout>
-    </item>
-    <item row="1" column="0">
-     <widget class="QPlainTextEdit" name="txtDecodeResult"/>
     </item>
    </layout>
   </widget>
@@ -309,6 +332,11 @@
   <action name="actionPause">
    <property name="text">
     <string>Pause</string>
+   </property>
+  </action>
+  <action name="actionTestDecode">
+   <property name="text">
+    <string>testDecode</string>
    </property>
   </action>
  </widget>

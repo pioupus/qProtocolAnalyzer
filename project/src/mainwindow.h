@@ -44,6 +44,8 @@ private slots:
 
     void on_tableWidget_itemSelectionChanged();
 
+    void on_actionTestDecode_triggered();
+
 private:
     Ui::MainWindow *ui;
 
