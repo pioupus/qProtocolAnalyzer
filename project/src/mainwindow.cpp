@@ -12,7 +12,7 @@
 #include <QDir>
 #include <QMessageBox>
 
-const int MAXFILEROWS = 300*1000;
+const int MAXFILEROWS = 200*1000;
 const QString SETTINGS_FILE_NAME = QDir::currentPath()+QDir::separator()+"protanalyzer.ini";
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -498,11 +498,12 @@ void MainWindow::on_actionTestDecode_triggered()
     decoder.RPCDecodeRPCData(inBinData);
 
     ui->treeWidget->clear();
-    ui->treeWidget->insertTopLevelItems(0, decoder.getTreeWidgetReport(NULL));
+    //QTreeWidgetItem * rootWidget = new QTreeWidgetItem(ui->treeWidget,(QTreeWidgetItem*)NULL);
+    ui->treeWidget->addTopLevelItems(decoder.getTreeWidgetReport(NULL));
 
 
-     ui->treeWidget->expandAll();
 
-     ui->treeWidget->resizeColumnToContents(0);
-     ui->treeWidget->resizeColumnToContents(1);
+    ui->treeWidget->expandAll();
+    ui->treeWidget->resizeColumnToContents(0);
+    ui->treeWidget->resizeColumnToContents(1);
 }

@@ -326,6 +326,7 @@
    </attribute>
    <addaction name="separator"/>
    <addaction name="actionPause"/>
+   <addaction name="actionTestDecode"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionPause">
