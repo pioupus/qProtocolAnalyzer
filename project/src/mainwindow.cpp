@@ -11,6 +11,7 @@
 #include <QSettings>
 #include <QDir>
 #include <QMessageBox>
+#include <QDialogButtonBox>
 
 const int MAXFILEROWS = 200*1000;
 const QString SETTINGS_FILE_NAME = QDir::currentPath()+QDir::separator()+"protanalyzer.ini";
@@ -437,11 +438,6 @@ void MainWindow::addNewEntry(QString time, QString content, QByteArray binData, 
 }
 
 
-void MainWindow::on_readyRead()
-{
-
-}
-
 
 
 
@@ -506,4 +502,76 @@ void MainWindow::on_actionTestDecode_triggered()
     ui->treeWidget->expandAll();
     ui->treeWidget->resizeColumnToContents(0);
     ui->treeWidget->resizeColumnToContents(1);
+}
+
+void MainWindow::on_treeWidget_customContextMenuRequested(const QPoint &pos)
+{
+    if (ui->treeWidget->selectedItems().count() > 0){
+        QMenu contextMenu(tr("Context menu"), this);
+
+        QAction action_addToPlot("add to plot", this);
+        QAction action_removeFromPlot("add to plot", this);
+        connect(&action_addToPlot, SIGNAL(triggered()), this, SLOT(on_actionAddToPlot_triggered()));
+        connect(&action_removeFromPlot, SIGNAL(triggered()), this, SLOT(on_actionRemoveFromPlot_triggered()));
+
+        contextMenu.addAction(&action_addToPlot);
+        contextMenu.addAction(&action_removeFromPlot);
+
+        contextMenu.exec(ui->treeWidget->viewport()->mapToGlobal(pos));
+    }
+}
+
+void MainWindow::on_actionAddToPlot_triggered()
+{
+    AddToPlotDialog dialog;
+    if (dialog.exec() == QDialog::Accepted){
+        qDebug() <<  dialog.getIndex();
+    }
+}
+
+void MainWindow::on_actionRemoveFromPlot_triggered()
+{
+
+}
+
+
+AddToPlotDialog::AddToPlotDialog(QWidget *parent, Qt::WindowFlags f): QDialog( parent, f )
+{
+    sb_x = new QSpinBox;
+    sb_y = new QSpinBox;
+    QGridLayout* gLayout = new QGridLayout;
+    QVBoxLayout* vLayout = new QVBoxLayout;
+
+
+    setWindowTitle("Add To Plot");
+    auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                       | QDialogButtonBox::Cancel);
+
+    connect(buttonBox, SIGNAL(accepted()), this, SLOT(acceptAndSetIndex()));
+
+    connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
+
+
+
+    gLayout->addWidget(sb_x, 0,0);
+    gLayout->addWidget(sb_y, 0,1);
+    vLayout->addItem(gLayout);
+    vLayout->addWidget(buttonBox);
+    setLayout(vLayout);
+}
+
+AddToPlotDialog::~AddToPlotDialog(){
+
+}
+
+QPair<int, int> AddToPlotDialog::getIndex()
+{
+    return index;
+}
+
+void AddToPlotDialog::acceptAndSetIndex()
+{
+    index.first = sb_x->value();
+    index.second = sb_y->value();
+    accept();
 }

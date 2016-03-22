@@ -292,6 +292,9 @@
          <height>400</height>
         </size>
        </property>
+       <property name="contextMenuPolicy">
+        <enum>Qt::CustomContextMenu</enum>
+       </property>
        <column>
         <property name="text">
          <string notr="true">fieldname</string>
@@ -337,6 +340,16 @@
   <action name="actionTestDecode">
    <property name="text">
     <string>testDecode</string>
+   </property>
+  </action>
+  <action name="actionAddToPlot">
+   <property name="text">
+    <string>addToPlot</string>
+   </property>
+  </action>
+  <action name="actionRemoveFromPlot">
+   <property name="text">
+    <string>removeFromPlot</string>
    </property>
   </action>
  </widget>

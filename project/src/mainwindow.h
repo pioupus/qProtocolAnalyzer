@@ -5,7 +5,8 @@
 #include <QWidget>
 #include <QMap>
 #include <QFile>
-
+#include <QDialog>
+#include <QSpinBox>
 #include "serialnode.h"
 
 namespace Ui {
@@ -23,7 +24,6 @@ public:
 
 public slots:
     void on_btnConnectClicked();
-    void on_readyRead();
 
 private slots:
 
@@ -45,6 +45,12 @@ private slots:
     void on_tableWidget_itemSelectionChanged();
 
     void on_actionTestDecode_triggered();
+
+    void on_treeWidget_customContextMenuRequested(const QPoint &pos);
+
+    void on_actionAddToPlot_triggered();
+
+    void on_actionRemoveFromPlot_triggered();
 
 private:
     Ui::MainWindow *ui;
@@ -72,6 +78,23 @@ private:
 
     QList<QPair<int,QByteArray>> binaryDataList;
 
+};
+
+class AddToPlotDialog : public QDialog
+{
+        Q_OBJECT
+public:
+
+    AddToPlotDialog(QWidget * parent = 0, Qt::WindowFlags f = 0);
+
+    ~AddToPlotDialog();
+    QPair<int,int> getIndex();
+private:
+   QPair<int,int> index;
+   QSpinBox *sb_x;
+   QSpinBox *sb_y;
+private slots:
+   void acceptAndSetIndex();
 };
 
 #endif // MAINWINDOW_H
