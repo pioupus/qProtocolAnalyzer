@@ -18,16 +18,19 @@ TEMPLATE = lib
 
 DEFINES += EXPORT_LIBRARY
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    plotwindow.cpp
 SOURCES += mainwindow.cpp
 SOURCES += serialnode.cpp
 
-HEADERS += mainwindow.h
+HEADERS += mainwindow.h \
+    plotwindow.h
 HEADERS += serialnode.h
 
 
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    plotwindow.ui
 
 
 

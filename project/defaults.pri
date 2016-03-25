@@ -24,7 +24,9 @@ LIBS += -L$$PWD/libs/build/googletest/googlemock/gtest
 
 INCLUDEPATH += $$PWD/libs/build/qtserialport/debug/include/
 
-greaterThan(5, QT_MAJOR_VERSION){
+lessThan(QT_MAJOR_VERSION, 5)
+{
+    message(qt version: $$QT_MAJOR_VERSION)
     #working with QT4 or less?
     CONFIG( debug, debug|release ) {
         LIBS += -L$$PWD/libs/build/qtserialport/debug/src/serialport/

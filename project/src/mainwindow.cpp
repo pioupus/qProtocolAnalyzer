@@ -489,7 +489,7 @@ void MainWindow::on_actionTestDecode_triggered()
                                        0x01 ,0x11 ,0x21};
     QByteArray inBinData = QByteArray((char*)inBinData_array, sizeof(inBinData_array));
     RPCRunTimeProtocolDescription rpcinterpreter;
-    rpcinterpreter.openProtocolDescription("C:/Users/ark/entwicklung/qt/qProtocolInterpreter/project/tests/scripts/decodeTest_struct_int.xml");
+    rpcinterpreter.openProtocolDescription("../../../project/libs/qRPCRuntimeParser/project/tests/scripts/decodeTest_struct_int.xml");
     RPCRuntimeDecoder decoder(rpcinterpreter);
     decoder.RPCDecodeRPCData(inBinData);
 
