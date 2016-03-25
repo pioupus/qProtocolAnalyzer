@@ -12,6 +12,7 @@
 #include <QDir>
 #include <QMessageBox>
 #include <QDialogButtonBox>
+#include <functional>
 
 const int MAXFILEROWS = 200*1000;
 const QString SETTINGS_FILE_NAME = QDir::currentPath()+QDir::separator()+"protanalyzer.ini";
@@ -23,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
 
+    plotwindow = new PlotWindow(this);
     QSettings settings(SETTINGS_FILE_NAME, QSettings::IniFormat );
 
     QString basePath = settings.value("ExportFilePath",QDir::currentPath()+QDir::separator()+"export").toString();
@@ -475,8 +477,11 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
     }else{
         decoder.RPCDecodeRPCData(binEntry.second);
     }
+
+
     ui->treeWidget->clear();
-    ui->treeWidget->insertTopLevelItems(0, decoder.getTreeWidgetReport(NULL));
+    ui->treeWidget->addTopLevelItems(decoder.getTreeWidgetReport(NULL));
+    ui->treeWidget->expandAll();
     ui->treeWidget->resizeColumnToContents(0);
     ui->treeWidget->resizeColumnToContents(1);
 }
@@ -521,11 +526,44 @@ void MainWindow::on_treeWidget_customContextMenuRequested(const QPoint &pos)
     }
 }
 
+void MainWindow::watchPointCallback(QString FieldID, QString humanReadableName, QPair<int,int> plotIndex, QDateTime timeStamp, int64_t value){
+
+    plotwindow->addPlotPoint( FieldID,  humanReadableName, plotIndex,  timeStamp, value);
+}
+
 void MainWindow::on_actionAddToPlot_triggered()
 {
-    AddToPlotDialog dialog;
-    if (dialog.exec() == QDialog::Accepted){
-        qDebug() <<  dialog.getIndex();
+    if (ui->treeWidget->selectedItems().count() > 0){
+
+        int row = ui->tableWidget->currentRow();
+
+
+        QTreeWidgetItem* selectedItem = ui->treeWidget->selectedItems()[0];
+        QString FieldID = selectedItem->data(0,Qt::UserRole).toString();
+
+        QPair<int,QByteArray> binEntry;
+        SerialNode* serialNode = NULL;
+
+        QString humanReadableName = selectedItem->text(0);
+
+        if ((row > 0) && (row < binaryDataList.count())){
+                binEntry = binaryDataList[row];
+                serialNode = serialPortList[binEntry.first];
+
+                humanReadableName = serialNode->serialport->portName()+": "+selectedItem->text(0);
+        }
+        AddToPlotDialog dialog(FieldID, humanReadableName);
+        if (dialog.exec() == QDialog::Accepted){
+            QPair<int,int> plotIndex = dialog.getIndex();
+
+            watchCallBack_t callback = std::bind(&MainWindow::watchPointCallback, this, std::placeholders::_1,std::placeholders::_2,std::placeholders::_3, std::placeholders::_4, std::placeholders::_5) ;
+
+            if (serialNode){
+                serialNode->addWatchPoint(dialog.getFieldID(),dialog.getHumanReadableName(),plotIndex,callback);
+            }
+            plotwindow->show();
+
+        }
     }
 }
 
@@ -535,10 +573,14 @@ void MainWindow::on_actionRemoveFromPlot_triggered()
 }
 
 
-AddToPlotDialog::AddToPlotDialog(QWidget *parent, Qt::WindowFlags f): QDialog( parent, f )
+AddToPlotDialog::AddToPlotDialog(QString FieldID, QString humanReadableName, QWidget *parent, Qt::WindowFlags f): QDialog( parent, f )
 {
+    this->FieldID = FieldID;
+    this->humanReadableName = humanReadableName;
+
     sb_x = new QSpinBox;
     sb_y = new QSpinBox;
+
     QGridLayout* gLayout = new QGridLayout;
     QVBoxLayout* vLayout = new QVBoxLayout;
 
@@ -567,6 +609,16 @@ AddToPlotDialog::~AddToPlotDialog(){
 QPair<int, int> AddToPlotDialog::getIndex()
 {
     return index;
+}
+
+QString AddToPlotDialog::getFieldID()
+{
+    return FieldID;
+}
+
+QString AddToPlotDialog::getHumanReadableName()
+{
+    return humanReadableName;
 }
 
 void AddToPlotDialog::acceptAndSetIndex()

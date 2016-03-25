@@ -39,7 +39,10 @@ public:
 
 
 
-signals:
+    void addWatchPoint(QString FieldID, QString humanReadableName, QPair<int,int> plotIndex, watchCallBack_t callback);
+    void removeWatchPoint(QString FieldID);
+    void clearWatchPoint();
+
 
 public slots:
     void on_readyRead();
@@ -49,6 +52,7 @@ private:
     bool isNewLine(const QByteArray lineRaw, const QString lineString);
 
     RPCRunTimeProtocolDescription rpcinterpreter;
+    RPCRuntimeDecoder rpcDecoder;
     int colIndex;
     nodeAppearence_t nodeAppearance;
     QString escapeStringDisplay;

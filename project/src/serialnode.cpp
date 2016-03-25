@@ -75,12 +75,13 @@ void SerialNode::setEscapeLength(int escapeLength)
 void SerialNode::setRPCDescriptionFileName(QString fn)
 {
     rpcinterpreter.openProtocolDescription(fn);
+    rpcDecoder = RPCRuntimeDecoder(rpcinterpreter);
 }
 
 RPCRuntimeDecoder SerialNode::getPackageDecoder()
 {
-    RPCRuntimeDecoder result(rpcinterpreter);
-    return result;
+
+    return rpcDecoder;
 }
 
 bool SerialNode::isUsingChannelCodec()
@@ -91,6 +92,21 @@ bool SerialNode::isUsingChannelCodec()
 void SerialNode::setPause(bool pause)
 {
     this->pause = pause;
+}
+
+void SerialNode::addWatchPoint(QString FieldID, QString humanReadableName, QPair<int, int> plotIndex, watchCallBack_t callback)
+{
+    rpcDecoder.addWatchPoint(FieldID,humanReadableName,plotIndex,callback);
+}
+
+void SerialNode::removeWatchPoint(QString FieldID)
+{
+    rpcDecoder.removeWatchPoint(FieldID);
+}
+
+void SerialNode::clearWatchPoint()
+{
+    rpcDecoder.clearWatchPoint();
 }
 
 bool SerialNode::isNewLine(const QByteArray lineRaw, const QString lineString){

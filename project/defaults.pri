@@ -20,6 +20,7 @@ INCLUDEPATH += $$PWD/libs/googletest/googlemock/include
 LIBS += -L$$PWD/libs/build/googletest/googlemock/
 LIBS += -L$$PWD/libs/build/googletest/googlemock/gtest
 
+LIBS += -lqwt
 
 
 INCLUDEPATH += $$PWD/libs/build/qtserialport/debug/include/

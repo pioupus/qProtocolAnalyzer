@@ -8,6 +8,7 @@
 #include <QDialog>
 #include <QSpinBox>
 #include "serialnode.h"
+#include "plotwindow.h"
 
 namespace Ui {
 class MainWindow;
@@ -75,9 +76,11 @@ private:
     QString fileName;
     int fileIndex;
     int fileRows;
+    PlotWindow* plotwindow;
 
     QList<QPair<int,QByteArray>> binaryDataList;
 
+    void watchPointCallback(QString FieldID, QString humanReadableName, QPair<int, int> plotIndex, QDateTime timeStamp, int64_t value);
 };
 
 class AddToPlotDialog : public QDialog
@@ -85,14 +88,18 @@ class AddToPlotDialog : public QDialog
         Q_OBJECT
 public:
 
-    AddToPlotDialog(QWidget * parent = 0, Qt::WindowFlags f = 0);
+    AddToPlotDialog(QString FieldID, QString humanReadableName, QWidget * parent = 0, Qt::WindowFlags f = 0);
 
     ~AddToPlotDialog();
     QPair<int,int> getIndex();
+    QString getFieldID();
+    QString getHumanReadableName();
 private:
    QPair<int,int> index;
    QSpinBox *sb_x;
    QSpinBox *sb_y;
+   QString FieldID;
+   QString humanReadableName;
 private slots:
    void acceptAndSetIndex();
 };
