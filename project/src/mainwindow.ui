@@ -330,6 +330,7 @@
    <addaction name="separator"/>
    <addaction name="actionPause"/>
    <addaction name="actionTestDecode"/>
+   <addaction name="actionTestPlot1"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionPause">
@@ -350,6 +351,11 @@
   <action name="actionRemoveFromPlot">
    <property name="text">
     <string>removeFromPlot</string>
+   </property>
+  </action>
+  <action name="actionTestPlot1">
+   <property name="text">
+    <string>testPlot1</string>
    </property>
   </action>
  </widget>

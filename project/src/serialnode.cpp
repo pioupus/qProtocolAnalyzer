@@ -24,6 +24,11 @@ void SerialNode::setColIndex(int i)
     colIndex = i;
 }
 
+void SerialNode::setTabIndex(int i)
+{
+    tabIndex = i;
+}
+
 void SerialNode::setAppearance(bool useHex)
 {
     if (useHex)
@@ -161,7 +166,14 @@ bool SerialNode::isNewLine(const QByteArray lineRaw, const QString lineString){
 void SerialNode::addLine(){
     QString s = inComingTime.toString("MM.dd HH:mm:ss.zzz");
     MainWindow* mainwin = qobject_cast<MainWindow*>(parent());
-    mainwin->addNewEntry(s,lineBufferDisplay,lineBufferRaw, colIndex);
+    if (rpcDecoder.getWatchPointList().count()){
+        if (isUsingChannelCodec()){
+            rpcDecoder.RPCDecodeChannelCodedData(lineBufferRaw);
+        }else{
+            rpcDecoder.RPCDecodeRPCData(lineBufferRaw);
+        }
+    }
+    mainwin->addNewEntry(s,lineBufferDisplay,lineBufferRaw, colIndex, tabIndex);
 
     lineBufferRaw.clear();
     lineBufferDisplay.clear();

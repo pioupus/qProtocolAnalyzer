@@ -21,7 +21,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    void addNewEntry(QString time, QString content, QByteArray binData, int colIndex);
+    void addNewEntry(QString time, QString content, QByteArray binData, int colIndex, int tabIndex);
 
 public slots:
     void on_btnConnectClicked();
@@ -29,29 +29,23 @@ public slots:
 private slots:
 
 
-
     void on_cmb_currentIndexChanged(int arg1);
-    //void on_cmb_editTextChanged(const QString &arg1);
-
     void on_spinBox_valueChanged(int arg1);
-
     void on_lineEdit_textChanged(const QString &arg1);
-
     void on_radioButton_toggled(bool checked);
-
     void on_actionPause_triggered();
 
-
-
     void on_tableWidget_itemSelectionChanged();
-
     void on_actionTestDecode_triggered();
-
     void on_treeWidget_customContextMenuRequested(const QPoint &pos);
-
     void on_actionAddToPlot_triggered();
 
     void on_actionRemoveFromPlot_triggered();
+
+    void on_actionTestPlot1_triggered();
+
+    void onTestTimerTriggered();
+
 
 private:
     Ui::MainWindow *ui;
@@ -78,6 +72,7 @@ private:
     int fileRows;
     PlotWindow* plotwindow;
 
+    QTimer* testTimer;
     QList<QPair<int,QByteArray>> binaryDataList;
 
     void watchPointCallback(QString FieldID, QString humanReadableName, QPair<int, int> plotIndex, QDateTime timeStamp, int64_t value);

@@ -23,6 +23,7 @@ public:
     explicit SerialNode(QObject *parent = 0);
     ~SerialNode();
     void setColIndex(int i);
+    void setTabIndex(int i);
     void setAppearance(bool useHex);
     void setEscaping(nodeEscaping_t escaping);
     void setEscapeRegEx(QString escaping);
@@ -54,6 +55,7 @@ private:
     RPCRunTimeProtocolDescription rpcinterpreter;
     RPCRuntimeDecoder rpcDecoder;
     int colIndex;
+    int tabIndex;
     nodeAppearence_t nodeAppearance;
     QString escapeStringDisplay;
     QByteArray escapeStringRaw;

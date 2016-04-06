@@ -24,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
 
+    testTimer = new QTimer(this);
     plotwindow = new PlotWindow(this);
     QSettings settings(SETTINGS_FILE_NAME, QSettings::IniFormat );
 
@@ -31,6 +32,9 @@ MainWindow::MainWindow(QWidget *parent) :
     settings.setValue("ExportFilePath",QDir::currentPath()+QDir::separator()+"export");
 
     QString dateStr =  QDateTime::currentDateTime().toString("MM_dd__HH_mm_ss_");
+
+    QTime midnight(0, 0, 0);
+    qsrand(midnight.secsTo(QTime::currentTime()));
 
     columnCount = 1;
     refreshTabs();
@@ -362,6 +366,7 @@ void MainWindow::on_btnConnectClicked(){
 
            int colIndex = insertColumn(serialport->portName());
            serialPortList[tabIndex]->setColIndex(colIndex);
+           serialPortList[tabIndex]->setTabIndex(tabIndex);
 
             updateDisplayParamters(tabIndex);
 
@@ -402,7 +407,7 @@ void MainWindow::beginNewDumpFile(){
     }
 }
 
-void MainWindow::addNewEntry(QString time, QString content, QByteArray binData,  int colIndex)
+void MainWindow::addNewEntry(QString time, QString content, QByteArray binData,  int colIndex, int tabIndex)
 {
     QTableWidgetItem *item_t=new QTableWidgetItem (time);
     QTableWidgetItem *item_c=new QTableWidgetItem (content);
@@ -430,7 +435,7 @@ void MainWindow::addNewEntry(QString time, QString content, QByteArray binData, 
          binaryDataList.removeFirst();
          rowindex--;
     }
-    QPair<int,QByteArray> binEntry = QPair<int,QByteArray>(colIndex,binData);
+    QPair<int,QByteArray> binEntry = QPair<int,QByteArray>(tabIndex,binData);
     binaryDataList.append(binEntry);
     ui->tableWidget->insertRow(rowindex);
     ui->tableWidget->setItem(rowindex,0,item_t);
@@ -512,17 +517,37 @@ void MainWindow::on_actionTestDecode_triggered()
 void MainWindow::on_treeWidget_customContextMenuRequested(const QPoint &pos)
 {
     if (ui->treeWidget->selectedItems().count() > 0){
-        QMenu contextMenu(tr("Context menu"), this);
+        int row = ui->tableWidget->currentRow();
+        QTreeWidgetItem* selectedItem = ui->treeWidget->selectedItems()[0];
+        QString FieldID = selectedItem->data(0,Qt::UserRole).toString();
+        RPCParamType_t paramType=RPCParamType_t::param_none;
 
-        QAction action_addToPlot("add to plot", this);
-        QAction action_removeFromPlot("add to plot", this);
-        connect(&action_addToPlot, SIGNAL(triggered()), this, SLOT(on_actionAddToPlot_triggered()));
-        connect(&action_removeFromPlot, SIGNAL(triggered()), this, SLOT(on_actionRemoveFromPlot_triggered()));
+        QPair<int,QByteArray> binEntry;
+        SerialNode* serialNode = NULL;
 
-        contextMenu.addAction(&action_addToPlot);
-        contextMenu.addAction(&action_removeFromPlot);
 
-        contextMenu.exec(ui->treeWidget->viewport()->mapToGlobal(pos));
+        if ((row > 0) && (row < binaryDataList.count())){
+            binEntry = binaryDataList[row];
+            serialNode = serialPortList[binEntry.first];
+            if(serialNode){
+                paramType = serialNode->getPackageDecoder().getParamDescriptionByFieldID(FieldID).rpcParamType;
+            }
+        }
+
+      //  if (paramType == RPCParamType_t::param_int) {
+            QMenu contextMenu(tr("Context menu"), this);
+
+            QAction action_addToPlot("add to plot", this);
+            QAction action_removeFromPlot("remove from plot", this);
+            connect(&action_addToPlot, SIGNAL(triggered()), this, SLOT(on_actionAddToPlot_triggered()));
+            connect(&action_removeFromPlot, SIGNAL(triggered()), this, SLOT(on_actionRemoveFromPlot_triggered()));
+
+            contextMenu.addAction(&action_addToPlot);
+            contextMenu.addAction(&action_removeFromPlot);
+
+            contextMenu.exec(ui->treeWidget->viewport()->mapToGlobal(pos));
+      //  }
+            (void)paramType;
     }
 }
 
@@ -562,6 +587,7 @@ void MainWindow::on_actionAddToPlot_triggered()
                 serialNode->addWatchPoint(dialog.getFieldID(),dialog.getHumanReadableName(),plotIndex,callback);
             }
             plotwindow->show();
+            watchPointCallback(dialog.getFieldID(),dialog.getHumanReadableName(),plotIndex,QDateTime(),3);
 
         }
     }
@@ -626,4 +652,17 @@ void AddToPlotDialog::acceptAndSetIndex()
     index.first = sb_x->value();
     index.second = sb_y->value();
     accept();
+}
+
+void MainWindow::on_actionTestPlot1_triggered()
+{
+    plotwindow->show();
+    watchPointCallback("test1","COM1 TEst",QPair<int,int>(0,0),QDateTime(),3);
+    connect(testTimer, SIGNAL(timeout()), this, SLOT(onTestTimerTriggered()));
+    testTimer->start(10);
+}
+
+void MainWindow::onTestTimerTriggered()
+{
+    watchPointCallback("test1","COM1 TEst",QPair<int,int>(0,0),QDateTime::currentDateTime(),qrand());
 }
