@@ -25,8 +25,7 @@ LIBS += -lqwt
 
 INCLUDEPATH += $$PWD/libs/build/qtserialport/debug/include/
 
-lessThan(QT_MAJOR_VERSION, 5)
-{
+lessThan(QT_MAJOR_VERSION, 5){
     message(qt version: $$QT_MAJOR_VERSION)
     #working with QT4 or less?
     CONFIG( debug, debug|release ) {

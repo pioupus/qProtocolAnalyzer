@@ -35,6 +35,8 @@ private slots:
     void on_radioButton_toggled(bool checked);
     void on_actionPause_triggered();
 
+       void on_decode_changed(const QString &arg1);
+
     void on_tableWidget_itemSelectionChanged();
     void on_actionTestDecode_triggered();
     void on_treeWidget_customContextMenuRequested(const QPoint &pos);
@@ -47,6 +49,9 @@ private slots:
     void onTestTimerTriggered();
 
 
+    void on_btnConnect_clicked();
+
+    void on_btnRPCFile_Browse_clicked();
 private:
     Ui::MainWindow *ui;
 

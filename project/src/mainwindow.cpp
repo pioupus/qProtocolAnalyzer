@@ -13,6 +13,7 @@
 #include <QMessageBox>
 #include <QDialogButtonBox>
 #include <functional>
+#include <QFileDialog>
 
 const int MAXFILEROWS = 200*1000;
 const QString SETTINGS_FILE_NAME = QDir::currentPath()+QDir::separator()+"protanalyzer.ini";
@@ -69,9 +70,16 @@ MainWindow::~MainWindow()
 
         QComboBox* comFormat = widget->findChild<QComboBox*>("comFormat");
 
+
+        QComboBox* comDecoder = widget->findChild<QComboBox*>("comDecoder");
+        QComboBox* comRPCFile = widget->findChild<QComboBox*>("comRPCFile");
+
         QSettings settings(SETTINGS_FILE_NAME, QSettings::IniFormat );
         settings.beginGroup("COMName"+ui->tabWidget->tabText(i));
-
+		
+        settings.setValue("Decoder",comDecoder->currentIndex());
+        settings.setValue("RPCFile",comRPCFile->currentText());
+		
         settings.setValue("Display Format",comFormat->currentIndex());
         settings.setValue("COM Stop",comStopBits->currentIndex());
         settings.setValue("COM DataLength",comDataBits->currentIndex());
@@ -112,7 +120,7 @@ void MainWindow::refreshTabs(void){
         SerialNode* serialNode = new SerialNode(this);
         serialPortList.append(serialNode);
         //serialNode->setRPCDescriptionFileName("C:/Users/ark/entwicklung/eclipse_workspace/funksonde2_probe/modules/rpcBluetooth/doc/server/RPC_BLUETOOTH_cmd_sg2probe.xml");
-        serialNode->setRPCDescriptionFileName("C:/Users/ark/entwicklung/eclipse_workspace/funksonde2_probe/modules/rpcBluetooth/doc/client/RPC_BLUETOOTH_cmd_probe2sg.xml");
+
         i++;
     }
 #endif
@@ -139,6 +147,7 @@ QWidget *MainWindow::createTabPage(int tabIndex, QString COMName)
     QWidget* result = new QWidget(ui->tabWidget);
     QWidget* colCOM = new QWidget(result);
     QWidget* colFormat = new QWidget(result);
+	    QWidget* colDecoder = new QWidget(result);
     QHBoxLayout *hbox = new QHBoxLayout(result);
 
     QFormLayout *flayoutCOM = new QFormLayout(colCOM);
@@ -160,9 +169,25 @@ QWidget *MainWindow::createTabPage(int tabIndex, QString COMName)
     QComboBox* comBaud = new QComboBox(colCOM);
     QComboBox* comDataBits = new QComboBox(colCOM);
     QComboBox* comStopBits = new QComboBox(colCOM);
-
     QComboBox* comFormat = new QComboBox(colFormat);
 
+    QFormLayout *flayoutDecoder = new QFormLayout(colDecoder);
+    QComboBox* comDecoder = new QComboBox(colDecoder);
+    QHBoxLayout *hboxRPCFile = new QHBoxLayout(colDecoder);
+    QComboBox* comRPCFile = new QComboBox(colDecoder);
+    QPushButton* btnBrowseRPCFile = new QPushButton(colDecoder);
+
+    hboxRPCFile->addWidget(comRPCFile);
+    hboxRPCFile->addWidget(btnBrowseRPCFile);
+
+    flayoutDecoder->addRow("Decoder",comDecoder);
+    flayoutDecoder->addRow("Description File",hboxRPCFile);
+    btnBrowseRPCFile->setText("...");
+    comRPCFile->setEditable(true);
+    comDecoder->setObjectName("comDecoder");
+    comRPCFile->setObjectName("comRPCFile");
+    comRPCFile->setMinimumWidth(200);
+	
     flayoutCOM->addRow("Baud",comBaud);
     flayoutCOM->addRow("Data bits",comDataBits);
     flayoutCOM->addRow("Stop bits",comStopBits);
@@ -218,10 +243,17 @@ QWidget *MainWindow::createTabPage(int tabIndex, QString COMName)
     comFormatl << "HEX" << "ASCII";
     comFormat->addItems(comFormatl);
 
+	    QStringList comDecoderl;
+    comDecoderl << "none" << "RPC with channel codec" << "RPC" << "0xAA framed uint";
+    comDecoder->addItems(comDecoderl);
+
+
+	
     hbox->addWidget(btnConnect);
     hbox->addWidget(colCOM);
     hbox->addWidget(colFormat);
-
+   hbox->addWidget(colDecoder);
+   
     hbox->addStretch();
 
     QSettings settings(SETTINGS_FILE_NAME, QSettings::IniFormat );
@@ -233,6 +265,9 @@ QWidget *MainWindow::createTabPage(int tabIndex, QString COMName)
     spinNLbyLenth->setValue(settings.value("Display Escape Length",8).toInt());
     edtEscape->setText(settings.value("Display Escape String","\\r\\n").toString());
     edtRegEx->setText(settings.value("Display Escape Regex","").toString());
+	    comRPCFile->setEditText(settings.value("RPCFile","").toString());
+    comDecoder->setCurrentIndex(settings.value("Decoder",0).toInt());
+	
     int val = settings.value("Display Escape type",0).toInt();
     if (val == 0){
         radByLength->setChecked(true);
@@ -251,9 +286,51 @@ QWidget *MainWindow::createTabPage(int tabIndex, QString COMName)
     connect(radByLength,SIGNAL(toggled(bool)),this,SLOT(on_radioButton_toggled(bool)));
     connect(radByRegEx,SIGNAL(toggled(bool)),this,SLOT(on_radioButton_toggled(bool)));
 
+    connect(comDecoder,SIGNAL(editTextChanged(QString)),this,SLOT(on_decode_changed(const QString)));
+
+    connect(comRPCFile,SIGNAL(editTextChanged(QString)),this,SLOT(on_decode_changed(const QString)));
+    connect(btnBrowseRPCFile,SIGNAL(clicked()),this,SLOT(on_btnRPCFile_Browse_clicked()));
 
     return result;
 }
+
+
+void MainWindow::on_btnRPCFile_Browse_clicked()
+{
+    QPushButton* button = qobject_cast<QPushButton*>(sender());
+    if (button){
+        int tabIndex = button->property("tabIndex").toInt();
+        QComboBox* cmb = ui->tabWidget->widget(tabIndex)->findChild<QComboBox*>("comRPCFile");
+        if (cmb){
+            QFileDialog fdiag;
+            QStringList filter;
+            QString fn;
+            filter  << "XML files (*.xml)" << "All files (*.*)";
+            fdiag.setFilters(filter);
+            fdiag.selectFile(cmb->currentText());
+            if (fdiag.exec()){
+                fn = fdiag.FileName;
+                int index = cmb->findText(fn);
+                if (index == -1){
+                    cmb->addItem(fn);
+                    index = cmb->count()-1;
+                }
+                cmb->setCurrentIndex(index);
+            }
+        }
+    }
+
+}
+
+void MainWindow::on_decode_changed(const QString &arg1)
+{
+(void)arg1;
+    QComboBox* combobox = qobject_cast<QComboBox*>(sender());
+    if (combobox){
+
+    }
+}
+
 
 void MainWindow::on_cmb_currentIndexChanged(int arg1)
 {
@@ -347,6 +424,7 @@ void MainWindow::on_btnConnectClicked(){
        }
        int tabIndex = button->property("tabIndex").toInt();
        QSerialPort* serialport = serialPortList[tabIndex]->serialport;
+       SerialNode* serialNode = serialPortList[tabIndex];
 
        if (shallBeOpened){
            serialport->setPortName(ui->tabWidget->tabText(tabIndex));
@@ -363,6 +441,10 @@ void MainWindow::on_btnConnectClicked(){
            QSerialPort::StopBits stopBits = stopBitDescriptionToStopBit(comStop->currentText());
            serialport->setStopBits(stopBits);
 
+           QComboBox* comRPCFile = ui->tabWidget->widget(tabIndex)->findChild<QComboBox*>("comRPCFile");
+
+
+           serialNode->setRPCDescriptionFileName(comRPCFile->currentText());
 
            int colIndex = insertColumn(serialport->portName());
            serialPortList[tabIndex]->setColIndex(colIndex);
@@ -666,3 +748,5 @@ void MainWindow::onTestTimerTriggered()
 {
     watchPointCallback("test1","COM1 TEst",QPair<int,int>(0,0),QDateTime::currentDateTime(),qrand());
 }
+
+
