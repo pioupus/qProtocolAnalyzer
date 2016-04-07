@@ -20,10 +20,14 @@ INCLUDEPATH += $$PWD/libs/googletest/googlemock/include
 LIBS += -L$$PWD/libs/build/googletest/googlemock/
 LIBS += -L$$PWD/libs/build/googletest/googlemock/gtest
 
-LIBS += -lqwt
+
 win32 {
-    INCLUDEPATH += C:\Qwt-6.1.2\include
-    LIBS += -LC:\Qwt-6.1.2\lib
+    INCLUDEPATH += C:/Qwt-6.1.2/include
+    #LIBS += -LC:/Qwt-6.1.2/lib
+    include ( C:/Qwt-6.1.2/features/qwt.prf )
+
+}else{
+    LIBS += -lqwt
 }
 
 
