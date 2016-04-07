@@ -121,10 +121,8 @@ void PlotWindow::setupWheelZooming(QwtPlot * plot)
 
 PlotEntry *PlotWindow::addPlot(QPair<int, int> plotIndex)
 {
-    QwtLegend *legend = new QwtLegend;
-
-
     QwtPlot* plot = new QwtPlot();
+    QwtLegend *legend = new QwtLegend();
 
     plot->setCanvasBackground(QColor(Qt::white));
     ui->plotLayout->addWidget(plot,plotIndex.second,plotIndex.first);

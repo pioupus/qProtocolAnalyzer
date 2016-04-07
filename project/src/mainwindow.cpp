@@ -301,21 +301,24 @@ void MainWindow::on_btnRPCFile_Browse_clicked()
     if (button){
         int tabIndex = button->property("tabIndex").toInt();
         QComboBox* cmb = ui->tabWidget->widget(tabIndex)->findChild<QComboBox*>("comRPCFile");
+        QString fn = cmb->currentText();
         if (cmb){
-            QFileDialog fdiag;
-            QStringList filter;
-            QString fn;
-            filter  << "XML files (*.xml)" << "All files (*.*)";
-            fdiag.setFilters(filter);
-            fdiag.selectFile(cmb->currentText());
-            if (fdiag.exec()){
-                fn = fdiag.FileName;
-                int index = cmb->findText(fn);
-                if (index == -1){
-                    cmb->addItem(fn);
-                    index = cmb->count()-1;
+            QFileDialog *fdiag = new QFileDialog(this, "open RPC description file", fn, "XML files (*.xml);;All files (*.*)");
+            //QStringList filter;
+
+            //filter  << "XML files (*.xml)" << "All files (*.*)";
+            //fdiag.setFilters(filter);
+            //fdiag->selectFile();
+            if (fdiag->exec()){
+                if(fdiag->selectedFiles().count()){
+                    fn = fdiag->selectedFiles()[0];
+                    int index = cmb->findText(fn);
+                    if (index == -1){
+                        cmb->addItem(fn);
+                        index = cmb->count()-1;
+                    }
+                    cmb->setCurrentIndex(index);
                 }
-                cmb->setCurrentIndex(index);
             }
         }
     }
@@ -748,5 +751,6 @@ void MainWindow::onTestTimerTriggered()
 {
     watchPointCallback("test1","COM1 TEst",QPair<int,int>(0,0),QDateTime::currentDateTime(),qrand());
 }
+
 
 

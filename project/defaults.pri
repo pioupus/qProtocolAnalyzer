@@ -21,6 +21,11 @@ LIBS += -L$$PWD/libs/build/googletest/googlemock/
 LIBS += -L$$PWD/libs/build/googletest/googlemock/gtest
 
 LIBS += -lqwt
+win32 {
+    INCLUDEPATH += C:\Qwt-6.1.2\include
+    LIBS += -LC:\Qwt-6.1.2\lib
+}
+
 
 
 INCLUDEPATH += $$PWD/libs/build/qtserialport/debug/include/

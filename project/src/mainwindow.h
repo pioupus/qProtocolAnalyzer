@@ -48,9 +48,6 @@ private slots:
 
     void onTestTimerTriggered();
 
-
-    void on_btnConnect_clicked();
-
     void on_btnRPCFile_Browse_clicked();
 private:
     Ui::MainWindow *ui;
