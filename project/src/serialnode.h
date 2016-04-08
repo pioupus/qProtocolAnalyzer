@@ -13,6 +13,7 @@
 
 enum class nodeAppearence_t { hex, ascii};
 enum class nodeEscaping_t { byLength, byEscapeCharacter, byRegEx};
+enum class nodeDecoderType_t { none, rpc, rpcWithCodec, AAFramedUint, spaceSeperatedHex};
 
 
 
@@ -31,6 +32,8 @@ public:
     void setEscapeLength(int escapeLength);
 
     void setRPCDescriptionFileName(QString fn);
+    void setDecodeType();
+
     RPCRuntimeDecoder getPackageDecoder();
     bool isUsingChannelCodec();
 

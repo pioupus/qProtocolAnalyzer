@@ -35,7 +35,7 @@ private slots:
     void on_radioButton_toggled(bool checked);
     void on_actionPause_triggered();
 
-       void on_decode_changed(const QString &arg1);
+       void on_decodeFile_changed(const QString &arg1);
 
     void on_tableWidget_itemSelectionChanged();
     void on_actionTestDecode_triggered();
@@ -49,6 +49,7 @@ private slots:
     void onTestTimerTriggered();
 
     void on_btnRPCFile_Browse_clicked();
+    void on_cmb_codecChanged(int arg1);
 private:
     Ui::MainWindow *ui;
 

@@ -11,6 +11,7 @@
 #include <QSettings>
 #include <QDir>
 #include <QMessageBox>
+#include <QFileInfo>
 #include <QDialogButtonBox>
 #include <functional>
 #include <QFileDialog>
@@ -19,6 +20,16 @@ const int MAXFILEROWS = 200*1000;
 const QString SETTINGS_FILE_NAME = QDir::currentPath()+QDir::separator()+"protanalyzer.ini";
 
 Q_DECLARE_METATYPE(QStringList)
+
+static bool fileExists(QString fn){
+    QFileInfo checkFile(fn);
+    // check if file exists and if yes: Is it really a file and no directory?
+    if (checkFile.exists() && checkFile.isFile()) {
+        return true;
+    } else {
+        return false;
+    }
+}
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -259,7 +270,7 @@ QWidget *MainWindow::createTabPage(int tabIndex, QString COMName)
     hbox->addWidget(btnConnect);
     hbox->addWidget(colCOM);
     hbox->addWidget(colFormat);
-   hbox->addWidget(colDecoder);
+    hbox->addWidget(colDecoder);
    
     hbox->addStretch();
 
@@ -272,11 +283,14 @@ QWidget *MainWindow::createTabPage(int tabIndex, QString COMName)
     spinNLbyLenth->setValue(settings.value("Display Escape Length",8).toInt());
     edtEscape->setText(settings.value("Display Escape String","\\r\\n").toString());
     edtRegEx->setText(settings.value("Display Escape Regex","").toString());
-	    comRPCFile->setEditText(settings.value("RPCFile","").toString());
+    comRPCFile->setEditText(settings.value("RPCFile","").toString());
     comDecoder->setCurrentIndex(settings.value("Decoder",0).toInt());
 	
     QStringList rpcFiles = settings.value("RPCFiles").toStringList();
     comRPCFile->addItems(rpcFiles);
+    if (comRPCFile->findText(comRPCFile->currentText())==-1){
+        comRPCFile->addItem(comRPCFile->currentText());
+    }
 
     int val = settings.value("Display Escape type",0).toInt();
     if (val == 0){
@@ -295,10 +309,9 @@ QWidget *MainWindow::createTabPage(int tabIndex, QString COMName)
     connect(radByEscape,SIGNAL(toggled(bool)),this,SLOT(on_radioButton_toggled(bool)));
     connect(radByLength,SIGNAL(toggled(bool)),this,SLOT(on_radioButton_toggled(bool)));
     connect(radByRegEx,SIGNAL(toggled(bool)),this,SLOT(on_radioButton_toggled(bool)));
+    connect(comDecoder,SIGNAL(currentIndexChanged(int)),this,SLOT(on_cmb_codecChanged(int)));
 
-    connect(comDecoder,SIGNAL(editTextChanged(QString)),this,SLOT(on_decode_changed(const QString)));
-
-    connect(comRPCFile,SIGNAL(editTextChanged(QString)),this,SLOT(on_decode_changed(const QString)));
+    connect(comRPCFile,SIGNAL(editTextChanged(QString)),this,SLOT(on_decodeFile_changed(const QString)));
     connect(btnBrowseRPCFile,SIGNAL(clicked()),this,SLOT(on_btnRPCFile_Browse_clicked()));
 
     return result;
@@ -335,12 +348,37 @@ void MainWindow::on_btnRPCFile_Browse_clicked()
 
 }
 
-void MainWindow::on_decode_changed(const QString &arg1)
+void MainWindow::on_cmb_codecChanged(int arg1)
 {
-(void)arg1;
+    (void)arg1;//codec
     QComboBox* combobox = qobject_cast<QComboBox*>(sender());
     if (combobox){
+        int tabIndex = ui->tabWidget->currentIndex();
+        if (fileExists(combobox->currentText())){
+            int i = combobox->findText(combobox->currentText());
+            if(i==-1){
+                combobox->addItem(combobox->currentText());
+            }
+            SerialNode* serialNode = serialPortList[tabIndex];
+            serialNode->setRPCDescriptionFileName(combobox->currentText());
+        }
+    }
+}
 
+void MainWindow::on_decodeFile_changed(const QString &arg1)
+{
+    (void)arg1;//rpc file
+    QComboBox* combobox = qobject_cast<QComboBox*>(sender());
+    if (combobox){
+        int tabIndex = ui->tabWidget->currentIndex();
+        if (fileExists(combobox->currentText())){
+            int i = combobox->findText(combobox->currentText());
+            if(i==-1){
+                combobox->addItem(combobox->currentText());
+            }
+            SerialNode* serialNode = serialPortList[tabIndex];
+            serialNode->setRPCDescriptionFileName(combobox->currentText());
+        }
     }
 }
 
