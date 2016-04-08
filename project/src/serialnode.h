@@ -32,7 +32,7 @@ public:
     void setEscapeLength(int escapeLength);
 
     void setRPCDescriptionFileName(QString fn);
-    void setDecodeType();
+    void setDecodeType(nodeDecoderType_t decType);
 
     RPCRuntimeDecoder getPackageDecoder();
     bool isUsingChannelCodec();

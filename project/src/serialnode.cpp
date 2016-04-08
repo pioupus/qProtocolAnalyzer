@@ -83,6 +83,11 @@ void SerialNode::setRPCDescriptionFileName(QString fn)
     rpcDecoder = RPCRuntimeDecoder(rpcinterpreter);
 }
 
+void SerialNode::setDecodeType(nodeDecoderType_t decType)
+{
+    (void)decType;
+}
+
 RPCRuntimeDecoder SerialNode::getPackageDecoder()
 {
 

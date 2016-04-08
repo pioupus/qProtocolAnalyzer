@@ -262,7 +262,7 @@ QWidget *MainWindow::createTabPage(int tabIndex, QString COMName)
     comFormat->addItems(comFormatl);
 
 	    QStringList comDecoderl;
-    comDecoderl << "none" << "RPC with channel codec" << "RPC" << "0xAA framed uint";
+    comDecoderl << "none" << "RPC with channel codec" << "RPC" << "0xAA framed uint" << "space seperated hex";
     comDecoder->addItems(comDecoderl);
 
 
@@ -354,14 +354,27 @@ void MainWindow::on_cmb_codecChanged(int arg1)
     QComboBox* combobox = qobject_cast<QComboBox*>(sender());
     if (combobox){
         int tabIndex = ui->tabWidget->currentIndex();
-        if (fileExists(combobox->currentText())){
-            int i = combobox->findText(combobox->currentText());
-            if(i==-1){
-                combobox->addItem(combobox->currentText());
-            }
-            SerialNode* serialNode = serialPortList[tabIndex];
-            serialNode->setRPCDescriptionFileName(combobox->currentText());
+        SerialNode* serialNode = serialPortList[tabIndex];
+        nodeDecoderType_t decType=nodeDecoderType_t::none;
+        switch(combobox->currentIndex()){
+            case 0:
+            decType=nodeDecoderType_t::none;
+            break;
+        case 1:
+        decType=nodeDecoderType_t::rpcWithCodec;
+        break;
+        case 2:
+        decType=nodeDecoderType_t::rpc;
+        break;
+        case 3:
+        decType=nodeDecoderType_t::AAFramedUint;
+        break;
+        case 4:
+        decType=nodeDecoderType_t::spaceSeperatedHex;
+        break;
         }
+        serialNode->setDecodeType(decType);
+
     }
 }
 
