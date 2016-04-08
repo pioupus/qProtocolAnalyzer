@@ -27,6 +27,8 @@ public:
     QVector<double> values;
     QVector<double> timeaxis;
 
+    void resetCurve();
+
 
 };
 
@@ -52,8 +54,17 @@ public:
     void dumpPlotPointToFile(QDateTime timeStamp, int64_t value, int colIndex);
 
     QFile dumpFile;
+    int fileIndex;
+    int fileLines;
 
 
+    void resetCurves();
+
+    void openDumpFile();
+    QDateTime dumpFileStartTime;
+
+
+    void resetPlotZoom();
 private:
 
 };
@@ -94,6 +105,11 @@ public:
 
     PlotEntry* addPlot(QPair<int,int> plotIndex);
 
+
+private slots:
+    void on_action_clear_triggered();
+
+    void on_action_zoom_reset_triggered();
 private:
     Ui::PlotWindow *ui;
 

@@ -7,6 +7,10 @@
 #include <qwt/qwt_plot_magnifier.h>
 #include <qwt/qwt_plot_zoomer.h>
 #include <qwt/qwt_plot_panner.h>
+#include <QAction>
+#include <QMessageBox>
+
+const int MAXFILEROWS = 1000*1000;
 
 class TimeScaleDraw:public QwtScaleDraw
 {
@@ -121,9 +125,11 @@ void PlotWindow::setupWheelZooming(QwtPlot * plot)
 
 PlotEntry *PlotWindow::addPlot(QPair<int, int> plotIndex)
 {
-    QwtPlot* plot = new QwtPlot();
+    QwtPlot* plot = new QwtPlot(this);
     QwtLegend *legend = new QwtLegend();
 
+    QAction* clearAction = new QAction(this);
+    QAction* zoomResetAction = new QAction(this);
     plot->setCanvasBackground(QColor(Qt::white));
     ui->plotLayout->addWidget(plot,plotIndex.second,plotIndex.first);
 
@@ -136,6 +142,15 @@ PlotEntry *PlotWindow::addPlot(QPair<int, int> plotIndex)
     plots.append(result);
     result->plotIndex = plotIndex;
     setupWheelZooming(plot);
+
+    clearAction->setText(QString::number(plotIndex.first)+" "+QString::number(plotIndex.second));
+    zoomResetAction->setText(QString::number(plotIndex.first)+" "+QString::number(plotIndex.second));
+
+    connect(clearAction,SIGNAL(triggered()), this, SLOT (on_action_clear_triggered()));
+    connect(zoomResetAction,SIGNAL(triggered()), this, SLOT (on_action_zoom_reset_triggered()));
+    ui->menuClear_2->addAction(clearAction);
+    ui->menuReset_plot_zoom->addAction(zoomResetAction);
+
     return result;
 }
 
@@ -158,6 +173,14 @@ void PlotCurveEntry::addPlotPoint(QDateTime timeStamp, int64_t value)
     plotCurve->plot()->replot();
 }
 
+void PlotCurveEntry::resetCurve()
+{
+    values.clear();
+    timeaxis.clear();
+    plotCurve->setSamples(timeaxis,values);
+    plotCurve->plot()->replot();
+}
+
 
 PlotEntry::PlotEntry()
 {
@@ -169,19 +192,50 @@ PlotEntry::PlotEntry()
     colorList.append(Qt::darkYellow);
     colorList.append(Qt::darkCyan);
 
-    int fileIndex=0;
+    fileIndex = 0;
+    fileLines = 0;
+    dumpFileStartTime = QDateTime::currentDateTime();
+    openDumpFile();
+
+}
+
+void PlotEntry::openDumpFile()
+{
+    fileLines = 0;
     dumpFile.close();
-    QString myfileName = "test"+QString("_%1").arg(fileIndex, 4, 10, QChar('0'))+".csv";
+    QString myfileName = "plotDump"+QString::number(plotIndex.first)+"_"+
+                                    QString::number(plotIndex.second)+"_"+
+                                    dumpFileStartTime.toString("MM_dd__HH_mm_ss_")+
+                                    QString("%1").arg(fileIndex, 4, 10, QChar('0'))+".csv";
+
     dumpFile.setFileName(myfileName);
     if (!dumpFile.open(QIODevice::WriteOnly | QIODevice::Text)){
-      #if 0
-        QMessageBox::warning(this, "ProtocolAnalyzer",
-                                      "Cant open file \""+myfileName+"\" for dumping data.",
-                                      QMessageBox::Ok ,
-                                      QMessageBox::Ok);
+      #if 1
+        QMessageBox::warning(NULL, QString("ProtocolAnalyzer"),
+                                      "Cant open file \""+myfileName+"\" for dumping plot data.",
+                                      QMessageBox::Ok );
 #endif
     }
+}
 
+void PlotEntry::resetCurves()
+{
+    fileIndex = 0;
+    fileLines = 0;
+    dumpFileStartTime = QDateTime::currentDateTime();
+    openDumpFile();
+    for( PlotCurveEntry* pce : plotCurveEntries){
+        pce->resetCurve();
+    }
+}
+
+void PlotEntry::resetPlotZoom()
+{
+    plot->setAxisAutoScale( QwtPlot::yLeft );
+    plot->setAxisAutoScale( QwtPlot::xBottom );
+    plot->replot();
+
+   // for( PlotCurveEntry* pce : plotCurveEntries){    }
 }
 
 PlotEntry::~PlotEntry()
@@ -241,15 +295,41 @@ void PlotEntry::dumpPlotPointToFile(QDateTime timeStamp, int64_t value, int colI
         row+="\n";
 
         dumpFile.write(row.toLocal8Bit(),row.length());
-#if 0
-        fileRows++;
-        if (fileRows > MAXFILEROWS){
-            beginNewDumpFile();
+
+        fileLines++;
+        if (fileLines > MAXFILEROWS){
+            openDumpFile();
         }
-#endif
+
     }
 
 
 
 }
 
+
+void PlotWindow::on_action_clear_triggered()
+{
+    QAction* action = qobject_cast<QAction*>(sender());
+    if (action){
+        QStringList plindex = action->text().split(" ");
+        QPair<int, int> plotIndex;
+        plotIndex.first = plindex[0].toInt();
+        plotIndex.second = plindex[1].toInt();
+        PlotEntry* pe = getPlotByPlotIndex(plotIndex);
+        pe->resetCurves();
+    }
+}
+
+void PlotWindow::on_action_zoom_reset_triggered()
+{
+    QAction* action = qobject_cast<QAction*>(sender());
+    if (action){
+        QStringList plindex = action->text().split(" ");
+        QPair<int, int> plotIndex;
+        plotIndex.first = plindex[0].toInt();
+        plotIndex.second = plindex[1].toInt();
+        PlotEntry* pe = getPlotByPlotIndex(plotIndex);
+        pe->resetPlotZoom();
+    }
+}
