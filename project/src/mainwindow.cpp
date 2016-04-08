@@ -18,6 +18,8 @@
 const int MAXFILEROWS = 200*1000;
 const QString SETTINGS_FILE_NAME = QDir::currentPath()+QDir::separator()+"protanalyzer.ini";
 
+Q_DECLARE_METATYPE(QStringList)
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -79,6 +81,11 @@ MainWindow::~MainWindow()
 		
         settings.setValue("Decoder",comDecoder->currentIndex());
         settings.setValue("RPCFile",comRPCFile->currentText());
+        QStringList rpcFiles;
+        for(int i=0;i<comRPCFile->count();i++){
+            rpcFiles.append(comRPCFile->itemText(i));
+        }
+        settings.setValue("RPCFiles",rpcFiles);
 		
         settings.setValue("Display Format",comFormat->currentIndex());
         settings.setValue("COM Stop",comStopBits->currentIndex());
@@ -268,6 +275,9 @@ QWidget *MainWindow::createTabPage(int tabIndex, QString COMName)
 	    comRPCFile->setEditText(settings.value("RPCFile","").toString());
     comDecoder->setCurrentIndex(settings.value("Decoder",0).toInt());
 	
+    QStringList rpcFiles = settings.value("RPCFiles").toStringList();
+    comRPCFile->addItems(rpcFiles);
+
     int val = settings.value("Display Escape type",0).toInt();
     if (val == 0){
         radByLength->setChecked(true);
