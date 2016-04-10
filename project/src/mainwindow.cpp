@@ -619,7 +619,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
 {
 
     int row = ui->tableWidget->currentRow();
-   // int col = ui->tableWidget->currentColumn();
+    int col = ui->tableWidget->currentColumn();
     QPair<int,QByteArray> binEntry = binaryDataList[row];
     SerialNode* serialNode = serialPortList[binEntry.first];
     RPCRuntimeDecoder decoder = serialNode->getPackageDecoder();
@@ -635,6 +635,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
     ui->treeWidget->expandAll();
     ui->treeWidget->resizeColumnToContents(0);
     ui->treeWidget->resizeColumnToContents(1);
+    ui->edtTextToCopy->setText(ui->tableWidget->item(row,col)->text());
 }
 
 void MainWindow::on_actionTestDecode_triggered()
