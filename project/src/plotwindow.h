@@ -48,7 +48,7 @@ public:
     QList<PlotCurveEntry*> plotCurveEntries;
 
     void addPlotCurve(QString FieldID, QString humanReadableName);
-
+    void removeCurve(QString FieldID);
     QList<QColor> colorList;
 
     void dumpPlotPointToFile(QDateTime timeStamp, int64_t value, int colIndex);
@@ -91,9 +91,6 @@ public:
     explicit PlotWindow(QWidget *parent = 0);
     ~PlotWindow();
 
-    //void addPlotCurve(QPair<int,int> plotindex, QString FieldIndex ,QString humanReadableName);
-    //PlotCurveEntry* getPlotCurveByFieldID(QString FieldID);
-
 
 
     PlotEntry* getPlotByFieldID(QString FieldID);
@@ -103,9 +100,12 @@ public:
 
     void addPlotPoint(QString FieldID, QString humanReadableName, QPair<int,int> plotIndex, QDateTime timeStamp, int64_t value);
 
+    void removeCurve(QString FieldID);
+
     PlotEntry* addPlot(QPair<int,int> plotIndex);
 
 
+    bool curveExists(QString FieldID);
 private slots:
     void on_action_clear_triggered();
 

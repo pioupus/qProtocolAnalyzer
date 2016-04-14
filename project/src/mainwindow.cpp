@@ -681,20 +681,26 @@ void MainWindow::on_treeWidget_customContextMenuRequested(const QPoint &pos)
             }
         }
 
-      //  if (paramType == RPCParamType_t::param_int) {
+        if (paramType == RPCParamType_t::param_int) {
             QMenu contextMenu(tr("Context menu"), this);
 
-            QAction action_addToPlot("add to plot", this);
-            QAction action_removeFromPlot("remove from plot", this);
+            QAction action_addToPlot("add to plot", &contextMenu);
             connect(&action_addToPlot, SIGNAL(triggered()), this, SLOT(on_actionAddToPlot_triggered()));
-            connect(&action_removeFromPlot, SIGNAL(triggered()), this, SLOT(on_actionRemoveFromPlot_triggered()));
-
             contextMenu.addAction(&action_addToPlot);
+
+            QAction action_removeFromPlot("remove from plot", &contextMenu);
+            connect(&action_removeFromPlot, SIGNAL(triggered()), this, SLOT(on_actionRemoveFromPlot_triggered()));
             contextMenu.addAction(&action_removeFromPlot);
 
+
+            action_removeFromPlot.setVisible(plotwindow->curveExists(FieldID));
+
+
+
+
             contextMenu.exec(ui->treeWidget->viewport()->mapToGlobal(pos));
-      //  }
-            (void)paramType;
+        }
+        (void)paramType;
     }
 }
 
@@ -742,7 +748,26 @@ void MainWindow::on_actionAddToPlot_triggered()
 
 void MainWindow::on_actionRemoveFromPlot_triggered()
 {
+    if (ui->treeWidget->selectedItems().count() > 0){
 
+        int row = ui->tableWidget->currentRow();
+
+
+        QTreeWidgetItem* selectedItem = ui->treeWidget->selectedItems()[0];
+        QString FieldID = selectedItem->data(0,Qt::UserRole).toString();
+
+        QPair<int,QByteArray> binEntry;
+        SerialNode* serialNode = NULL;
+
+        if ((row > 0) && (row < binaryDataList.count())){
+                binEntry = binaryDataList[row];
+                serialNode = serialPortList[binEntry.first];
+        }
+        if (serialNode){
+            serialNode->removeWatchPoint(FieldID);
+        }
+        plotwindow->removeCurve(FieldID);
+    }
 }
 
 

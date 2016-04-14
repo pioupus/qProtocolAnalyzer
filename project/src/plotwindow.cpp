@@ -79,6 +79,7 @@ PlotEntry *PlotWindow::getPlotByPlotIndex(QPair<int, int> plotIndex)
 
 
 
+
 void PlotWindow::addPlotPoint(QString FieldID, QString humanReadableName, QPair<int, int> plotIndex, QDateTime timeStamp, int64_t value)
 {
 
@@ -96,6 +97,26 @@ void PlotWindow::addPlotPoint(QString FieldID, QString humanReadableName, QPair<
     }
 
 }
+
+void PlotWindow::removeCurve(QString FieldID)
+{
+    PlotCurveEntrySearchResult pcesr = getPlotCurveByFieldID(FieldID);
+    if (pcesr.pe){
+        pcesr.pe->removeCurve(FieldID);
+    }
+}
+
+bool PlotWindow::curveExists(QString FieldID)
+{
+    PlotCurveEntrySearchResult pcesr = getPlotCurveByFieldID(FieldID);
+    if (pcesr.pe){
+        return true;
+    }else{
+        return false;
+    }
+
+}
+
 
 void PlotWindow::setupWheelZooming(QwtPlot * plot)
 {
@@ -162,7 +183,7 @@ PlotCurveEntry::PlotCurveEntry()
 
 PlotCurveEntry::~PlotCurveEntry()
 {
-
+    delete plotCurve;
 }
 
 void PlotCurveEntry::addPlotPoint(QDateTime timeStamp, int64_t value)
@@ -279,6 +300,17 @@ void PlotEntry::addPlotCurve(QString FieldID, QString humanReadableName )
     pce->humanReadableName = humanReadableName;
 
     plotCurveEntries.append(pce);
+}
+
+void PlotEntry::removeCurve(QString FieldID)
+{
+    for (int i = 0; i< plotCurveEntries.count();i++){
+        if (plotCurveEntries[i]->FieldID == FieldID){
+            delete plotCurveEntries[i];
+            plotCurveEntries.removeAt(i);
+            break;
+        }
+    }
 }
 
 void PlotEntry::dumpPlotPointToFile(QDateTime timeStamp, int64_t value, int colIndex)
