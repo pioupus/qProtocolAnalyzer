@@ -15,58 +15,44 @@ class PlotCurveEntrySearchResult;
 class PlotCurveEntry{
 public:
     PlotCurveEntry();
-
     ~PlotCurveEntry();
+
+    void addPlotPoint(QDateTime timeStamp, int64_t value);
+    void resetCurve();
 
     QString FieldID;
     QString humanReadableName;
-
     QwtPlotCurve* plotCurve;
-
-    void addPlotPoint(QDateTime timeStamp, int64_t value);
     QVector<double> values;
     QVector<double> timeaxis;
-
-    void resetCurve();
-
-
 };
 
 
 
 class PlotEntry{
 public:
-    PlotEntry();
+    PlotEntry(QString filePath);
     ~PlotEntry();
-
-    QPair<int,int>plotIndex;
-
-    QwtPlot* plot;
-
     PlotCurveEntrySearchResult getPlotCurveByFieldID(QString FieldID);
-
-    QList<PlotCurveEntry*> plotCurveEntries;
-
     void addPlotCurve(QString FieldID, QString humanReadableName);
     void removeCurve(QString FieldID);
-    QList<QColor> colorList;
-
     void dumpPlotPointToFile(QDateTime timeStamp, int64_t value, int colIndex);
+    void resetCurves();
+    void openDumpFile();
+    void resetPlotZoom();
+    void setFilePath(QString path);
 
+    QPair<int,int>plotIndex;
+    QwtPlot* plot;
+    QList<PlotCurveEntry*> plotCurveEntries;
+    QDateTime dumpFileStartTime;
+
+private:
+    QList<QColor> colorList;
+    QString filePath;
     QFile dumpFile;
     int fileIndex;
     int fileLines;
-
-
-    void resetCurves();
-
-    void openDumpFile();
-    QDateTime dumpFileStartTime;
-
-
-    void resetPlotZoom();
-private:
-
 };
 
 class PlotCurveEntrySearchResult{
@@ -90,34 +76,25 @@ class PlotWindow : public QMainWindow
 public:
     explicit PlotWindow(QWidget *parent = 0);
     ~PlotWindow();
-
-
-
     PlotEntry* getPlotByFieldID(QString FieldID);
-
     PlotEntry* getPlotByPlotIndex(QPair<int,int> plotIndex);
-
-
     void addPlotPoint(QString FieldID, QString humanReadableName, QPair<int,int> plotIndex, QDateTime timeStamp, int64_t value);
-
     void removeCurve(QString FieldID);
-
     PlotEntry* addPlot(QPair<int,int> plotIndex);
-
-
     bool curveExists(QString FieldID);
+    void setDumpFilePath(QString path);
+
 private slots:
     void on_action_clear_triggered();
-
     void on_action_zoom_reset_triggered();
+
 private:
-    Ui::PlotWindow *ui;
-
-    QList<PlotEntry*> plots;
-
+    PlotCurveEntrySearchResult getPlotCurveByFieldID(QString FieldID);
     void setupWheelZooming(QwtPlot *plot);
 
-    PlotCurveEntrySearchResult getPlotCurveByFieldID(QString FieldID);
+    QString dumpFilePath;
+    Ui::PlotWindow *ui;
+    QList<PlotEntry*> plots;
 };
 
 #endif // PLOTWINDOW_H

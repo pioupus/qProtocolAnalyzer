@@ -117,6 +117,11 @@ bool PlotWindow::curveExists(QString FieldID)
 
 }
 
+void PlotWindow::setDumpFilePath(QString path)
+{
+    dumpFilePath = path;
+}
+
 
 void PlotWindow::setupWheelZooming(QwtPlot * plot)
 {
@@ -154,7 +159,7 @@ PlotEntry *PlotWindow::addPlot(QPair<int, int> plotIndex)
     plot->setCanvasBackground(QColor(Qt::white));
     ui->plotLayout->addWidget(plot,plotIndex.second,plotIndex.first);
 
-    PlotEntry* result = new PlotEntry();
+    PlotEntry* result = new PlotEntry(dumpFilePath);
 
     legend->setFrameStyle(QFrame::Box|QFrame::Sunken);
     plot->insertLegend(legend, QwtPlot::BottomLegend);
@@ -171,6 +176,8 @@ PlotEntry *PlotWindow::addPlot(QPair<int, int> plotIndex)
     connect(zoomResetAction,SIGNAL(triggered()), this, SLOT (on_action_zoom_reset_triggered()));
     ui->menuClear_2->addAction(clearAction);
     ui->menuReset_plot_zoom->addAction(zoomResetAction);
+
+
 
     return result;
 }
@@ -203,7 +210,7 @@ void PlotCurveEntry::resetCurve()
 }
 
 
-PlotEntry::PlotEntry()
+PlotEntry::PlotEntry(QString filePath)
 {
     colorList.append(Qt::red);
     colorList.append(Qt::blue);
@@ -212,7 +219,7 @@ PlotEntry::PlotEntry()
     colorList.append(Qt::magenta);
     colorList.append(Qt::darkYellow);
     colorList.append(Qt::darkCyan);
-
+    setFilePath(filePath);
     fileIndex = 0;
     fileLines = 0;
     dumpFileStartTime = QDateTime::currentDateTime();
@@ -224,7 +231,7 @@ void PlotEntry::openDumpFile()
 {
     fileLines = 0;
     dumpFile.close();
-    QString myfileName = "plotDump"+QString::number(plotIndex.first)+"_"+
+    QString myfileName = filePath+"/plotDump"+QString::number(plotIndex.first)+"_"+
                                     QString::number(plotIndex.second)+"_"+
                                     dumpFileStartTime.toString("MM_dd__HH_mm_ss_")+
                                     QString("%1").arg(fileIndex, 4, 10, QChar('0'))+".csv";
@@ -236,6 +243,14 @@ void PlotEntry::openDumpFile()
                                       "Cant open file \""+myfileName+"\" for dumping plot data.",
                                       QMessageBox::Ok );
 #endif
+    }
+    if (dumpFile.isWritable()){
+        QString row = "timeStamp";
+        for(int i=0; i<plotCurveEntries.count();i++){
+            row += ";\""+plotCurveEntries[i]->humanReadableName+"\"";
+        }
+        row+="\n";
+        dumpFile.write(row.toLocal8Bit(),row.length());
     }
 }
 
@@ -255,8 +270,11 @@ void PlotEntry::resetPlotZoom()
     plot->setAxisAutoScale( QwtPlot::yLeft );
     plot->setAxisAutoScale( QwtPlot::xBottom );
     plot->replot();
+}
 
-   // for( PlotCurveEntry* pce : plotCurveEntries){    }
+void PlotEntry::setFilePath(QString path)
+{
+    filePath = path;
 }
 
 PlotEntry::~PlotEntry()
@@ -317,7 +335,7 @@ void PlotEntry::dumpPlotPointToFile(QDateTime timeStamp, int64_t value, int colI
 {
     if (dumpFile.isWritable()){
         QString row = timeStamp.toString("MM.dd HH:mm:ss.zzz");
-        for(int i=1; i<plotCurveEntries.count();i++){
+        for(int i=0; i<plotCurveEntries.count();i++){
             if (i == colIndex){
                 row += ";\""+QString::number(value)+"\"";
             }else{
@@ -327,7 +345,9 @@ void PlotEntry::dumpPlotPointToFile(QDateTime timeStamp, int64_t value, int colI
         row+="\n";
 
         dumpFile.write(row.toLocal8Bit(),row.length());
-
+        if (fileLines % 100 == 0){
+            dumpFile.flush();
+        }
         fileLines++;
         if (fileLines > MAXFILEROWS){
             openDumpFile();

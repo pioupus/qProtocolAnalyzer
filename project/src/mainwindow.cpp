@@ -57,6 +57,7 @@ MainWindow::MainWindow(QWidget *parent) :
     if (!basePath.endsWith(QDir::separator())){
         basePath+= QDir::separator();
     }
+    plotwindow->setDumpFilePath(basePath);
     fileName = basePath+dateStr;
     beginNewDumpFile();
 

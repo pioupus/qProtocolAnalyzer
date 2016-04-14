@@ -172,6 +172,7 @@ void SerialNode::addLine(){
     QString s = inComingTime.toString("MM.dd HH:mm:ss.zzz");
     MainWindow* mainwin = qobject_cast<MainWindow*>(parent());
     if (rpcDecoder.getWatchPointList().count()){
+        rpcDecoder.setTimeStamp(inComingTime);
         if (isUsingChannelCodec()){
             rpcDecoder.RPCDecodeChannelCodedData(lineBufferRaw);
         }else{
