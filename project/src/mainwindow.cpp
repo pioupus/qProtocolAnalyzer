@@ -637,6 +637,25 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
     ui->treeWidget->resizeColumnToContents(0);
     ui->treeWidget->resizeColumnToContents(1);
     ui->edtTextToCopy->setText(ui->tableWidget->item(row,col)->text());
+    QList<QTableWidgetItem *> iList = ui->tableWidget->selectedItems();
+    if (iList.count()>1){
+
+        int row_first = iList.first()->row();
+        int row_last = iList.last()->row();
+        QString time_str_first = ui->tableWidget->item(row_first,0)->text();
+        QString time_str_last = ui->tableWidget->item(row_last,0)->text();
+        QDateTime time_first = QDateTime::fromString(time_str_first,"MM.dd HH:mm:ss.zzz");
+        QDateTime time_last = QDateTime::fromString(time_str_last,"MM.dd HH:mm:ss.zzz");
+        int msecs = time_first.msecsTo(time_last);
+        int secs = msecs/1000;
+        msecs = abs(msecs%1000);
+        //QString msecsStr = ;
+        ui->lblTimeDiff->setText("Time difference: "+QString::number(secs)+"."+QString("%1").arg(msecs, 3, 10, QChar('0'))+" s" );
+    }else{
+        ui->lblTimeDiff->setText("Time difference: 0.000 s" );
+    }
+
+
 }
 
 void MainWindow::on_actionTestDecode_triggered()
