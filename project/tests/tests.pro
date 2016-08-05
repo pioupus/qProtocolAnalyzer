@@ -25,6 +25,8 @@ CONFIG( debug, debug|release ) {
     LIBS += -L../src/
 }
 
+
+
 COPY_DIR = "$$(UNIXTOOLS)cp -r"
 
 #message($$COPY_DIR)

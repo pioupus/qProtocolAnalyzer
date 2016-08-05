@@ -11,6 +11,9 @@ QMAKE_CXXFLAGS += -std=c++11
 
 SRC_DIR = $$PWD
 
+QPROTOCOL_INTERPRETER_PATH=$$PWD/libs/qRPCRuntimeParser
+include($$QPROTOCOL_INTERPRETER_PATH/qProtocollInterpreter_static.pri)
+
 INCLUDEPATH += $$PWD/src
 INCLUDEPATH += $$PWD/src/CommunicationDevices
 
@@ -19,6 +22,7 @@ INCLUDEPATH += $$PWD/libs/googletest/googlemock/include
 
 LIBS += -L$$PWD/libs/build/googletest/googlemock/
 LIBS += -L$$PWD/libs/build/googletest/googlemock/gtest
+
 
 
 win32 {
