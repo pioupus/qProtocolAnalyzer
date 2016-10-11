@@ -1,7 +1,7 @@
 #include "serialnode.h"
 #include "mainwindow.h"
 #include <QDateTime>
-
+#include <fstream>
 #include <QDebug>
 SerialNode::SerialNode(QObject *parent) :
     QObject(parent)
@@ -79,8 +79,9 @@ void SerialNode::setEscapeLength(int escapeLength)
 
 void SerialNode::setRPCDescriptionFileName(QString fn)
 {
-    rpcinterpreter.openProtocolDescription(fn);
-    rpcDecoder = RPCRuntimeDecoder(rpcinterpreter);
+    std::ifstream xmlfile{fn.toStdString()};
+    rpcinterpreter.openProtocolDescription(xmlfile);
+    //rpcDecoder = RPCRuntimeDecoder(rpcinterpreter);
 }
 
 void SerialNode::setDecodeType(nodeDecoderType_t decType)
@@ -90,8 +91,8 @@ void SerialNode::setDecodeType(nodeDecoderType_t decType)
 
 RPCRuntimeDecoder SerialNode::getPackageDecoder()
 {
-
-    return rpcDecoder;
+    RPCRuntimeDecoder result{rpcinterpreter};
+    return result;
 }
 
 bool SerialNode::isUsingChannelCodec()
@@ -104,6 +105,7 @@ void SerialNode::setPause(bool pause)
     this->pause = pause;
 }
 
+#if WATCHPOINT==1
 void SerialNode::addWatchPoint(QString FieldID, QString humanReadableName, QPair<int, int> plotIndex, watchCallBack_t callback)
 {
     rpcDecoder.addWatchPoint(FieldID,humanReadableName,plotIndex,callback);
@@ -118,7 +120,7 @@ void SerialNode::clearWatchPoint()
 {
     rpcDecoder.clearWatchPoint();
 }
-
+#endif
 bool SerialNode::isNewLine(const QByteArray lineRaw, const QString lineString){
     bool result = false;
     switch(nodeEscaping){
@@ -171,7 +173,9 @@ bool SerialNode::isNewLine(const QByteArray lineRaw, const QString lineString){
 void SerialNode::addLine(){
     QString s = inComingTime.toString("MM.dd HH:mm:ss.zzz");
     MainWindow* mainwin = qobject_cast<MainWindow*>(parent());
-    if (rpcDecoder.getWatchPointList().count()){
+#if WATCHPOINT==1
+    if (rpcDecoder.getWatchPointList().count())
+    {
         rpcDecoder.setTimeStamp(inComingTime);
         if (isUsingChannelCodec()){
             rpcDecoder.RPCDecodeChannelCodedData(lineBufferRaw);
@@ -179,6 +183,7 @@ void SerialNode::addLine(){
             rpcDecoder.RPCDecodeRPCData(lineBufferRaw);
         }
     }
+#endif
     mainwin->addNewEntry(s,lineBufferDisplay,lineBufferRaw, colIndex, tabIndex);
 
     lineBufferRaw.clear();

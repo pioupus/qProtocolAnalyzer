@@ -15,6 +15,12 @@
 #include <QDialogButtonBox>
 #include <functional>
 #include <QFileDialog>
+#include"../libs/qRPCRuntimeParser/project/src/channel_codec_wrapper.h"
+#include"../libs/qRPCRuntimeParser/project/src/rpcruntime_decoded_function_call.h"
+#include"../libs/qRPCRuntimeParser/project/src/rpc_ui.h"
+
+//#include "channel_codec_wrapper.h"
+
 
 const int MAXFILEROWS = 200*1000;
 const QString SETTINGS_FILE_NAME = QDir::currentPath()+QDir::separator()+"protanalyzer.ini";
@@ -621,23 +627,54 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
 
     int row = ui->tableWidget->currentRow();
     int col = ui->tableWidget->currentColumn();
+    bool complete = false;
     QPair<int,QByteArray> binEntry = binaryDataList[row];
     SerialNode* serialNode = serialPortList[binEntry.first];
     RPCRuntimeDecoder decoder = serialNode->getPackageDecoder();
+
+    std::unique_ptr<QTreeWidgetItem> items;
+    std::vector<unsigned char> inData(binEntry.second.data(),binEntry.second.data()+binEntry.second.count());
+
     if (serialNode->isUsingChannelCodec()){
-        decoder.RPCDecodeChannelCodedData(binEntry.second);
+        Channel_codec_wrapper cc(decoder);
+
+
+        cc.add_data(inData);
+
+       if (cc.transfer_complete()){
+           complete = true;
+           RPCRuntimeDecodedFunctionCall function_call = cc.pop();
+           items = getTreeWidgetReport(function_call);
+       }
+        //decoder.RPCDecodeChannelCodedData(binEntry.second);
     }else{
-        decoder.RPCDecodeRPCData(binEntry.second);
+        RPCRuntimeTransfer transfer = decoder.decode(inData);
+        if (transfer.is_complete()){
+            complete = true;
+            RPCRuntimeDecodedFunctionCall function_call = transfer.decode();
+            items = getTreeWidgetReport(function_call);
+        }
+
+        // QCOMPARE(transfer.is_complete(), true);
+        //QCOMPARE(transfer.get_min_number_of_bytes(), static_cast<int>(sizeof inBinData_array));
+
+        // function_call = transfer.decode();
+
+        //decoder.RPCDecodeRPCData(binEntry.second);
     }
 
+    if (complete){
 
-    ui->treeWidget->clear();
-    ui->treeWidget->addTopLevelItems(decoder.getTreeWidgetReport(NULL));
-    ui->treeWidget->expandAll();
-    ui->treeWidget->resizeColumnToContents(0);
-    ui->treeWidget->resizeColumnToContents(1);
+
+        ui->treeWidget->clear();
+        ui->treeWidget->addTopLevelItems(items.release());
+        ui->treeWidget->expandAll();
+        ui->treeWidget->resizeColumnToContents(0);
+        ui->treeWidget->resizeColumnToContents(1);
+    }
     ui->edtTextToCopy->setText(ui->tableWidget->item(row,col)->text());
     QList<QTableWidgetItem *> iList = ui->tableWidget->selectedItems();
+
     if (iList.count()>1){
 
         int row_first = iList.first()->row();
@@ -731,6 +768,7 @@ void MainWindow::watchPointCallback(QString FieldID, QString humanReadableName, 
 
 void MainWindow::on_actionAddToPlot_triggered()
 {
+    #if WATCHPOINT==1
     if (ui->treeWidget->selectedItems().count() > 0){
 
         int row = ui->tableWidget->currentRow();
@@ -764,10 +802,12 @@ void MainWindow::on_actionAddToPlot_triggered()
 
         }
     }
+#endif
 }
 
 void MainWindow::on_actionRemoveFromPlot_triggered()
 {
+    #if WATCHPOINT==1
     if (ui->treeWidget->selectedItems().count() > 0){
 
         int row = ui->tableWidget->currentRow();
@@ -788,6 +828,7 @@ void MainWindow::on_actionRemoveFromPlot_triggered()
         }
         plotwindow->removeCurve(FieldID);
     }
+    #endif
 }
 
 
