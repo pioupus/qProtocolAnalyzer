@@ -667,7 +667,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
 
 
         ui->treeWidget->clear();
-        ui->treeWidget->addTopLevelItems(items.release());
+        ui->treeWidget->addTopLevelItem(items.release());
         ui->treeWidget->expandAll();
         ui->treeWidget->resizeColumnToContents(0);
         ui->treeWidget->resizeColumnToContents(1);
@@ -697,6 +697,7 @@ void MainWindow::on_tableWidget_itemSelectionChanged()
 
 void MainWindow::on_actionTestDecode_triggered()
 {
+#if 0
     const uint8_t inBinData_array[] = {0x18 ,0x2b ,0x00 ,0x48 ,0x61 ,0x6c ,0x6c ,0x6f ,0x33 ,0x34 ,0x35 ,0x36 ,0x37 ,0x38 ,0x39 ,0x30,
                                        0x31 ,0x32 ,0x33 ,0x34 ,0x35 ,0x36 ,0x37 ,0x34 ,0x38 ,0x39 ,0x30 ,0x31 ,0x32 ,0x33 ,0x34 ,0x35,
                                        0x36 ,0x37 ,0x38 ,0x39 ,0x30 ,0x31 ,0x32 ,0x33 ,0x34 ,0x35 ,0x36 ,0x37 ,0x38 ,0x00 ,0x10 ,0x20,
@@ -716,15 +717,16 @@ void MainWindow::on_actionTestDecode_triggered()
     ui->treeWidget->expandAll();
     ui->treeWidget->resizeColumnToContents(0);
     ui->treeWidget->resizeColumnToContents(1);
+#endif
 }
 
 void MainWindow::on_treeWidget_customContextMenuRequested(const QPoint &pos)
 {
+    (void)pos;
     if (ui->treeWidget->selectedItems().count() > 0){
         int row = ui->tableWidget->currentRow();
         QTreeWidgetItem* selectedItem = ui->treeWidget->selectedItems()[0];
         QString FieldID = selectedItem->data(0,Qt::UserRole).toString();
-        RPCParamType_t paramType=RPCParamType_t::param_none;
 
         QPair<int,QByteArray> binEntry;
         SerialNode* serialNode = NULL;
@@ -734,30 +736,30 @@ void MainWindow::on_treeWidget_customContextMenuRequested(const QPoint &pos)
             binEntry = binaryDataList[row];
             serialNode = serialPortList[binEntry.first];
             if(serialNode){
-                paramType = serialNode->getPackageDecoder().getParamDescriptionByFieldID(FieldID).rpcParamType;
+                #if WATCHPOINT==1
+                RPCRuntimeParameterDescription::Type paramType = serialNode->getPackageDecoder().getParamDescriptionByFieldID(FieldID).rpcParamType;
+                if (paramType == RPCParamType_t::param_int) {
+                    QMenu contextMenu(tr("Context menu"), this);
+
+                    QAction action_addToPlot("add to plot", &contextMenu);
+                    connect(&action_addToPlot, SIGNAL(triggered()), this, SLOT(on_actionAddToPlot_triggered()));
+                    contextMenu.addAction(&action_addToPlot);
+
+                    QAction action_removeFromPlot("remove from plot", &contextMenu);
+                    connect(&action_removeFromPlot, SIGNAL(triggered()), this, SLOT(on_actionRemoveFromPlot_triggered()));
+                    contextMenu.addAction(&action_removeFromPlot);
+
+
+                    action_removeFromPlot.setVisible(plotwindow->curveExists(FieldID));
+
+
+
+
+                    contextMenu.exec(ui->treeWidget->viewport()->mapToGlobal(pos));
+                }
+                #endif
             }
         }
-
-        if (paramType == RPCParamType_t::param_int) {
-            QMenu contextMenu(tr("Context menu"), this);
-
-            QAction action_addToPlot("add to plot", &contextMenu);
-            connect(&action_addToPlot, SIGNAL(triggered()), this, SLOT(on_actionAddToPlot_triggered()));
-            contextMenu.addAction(&action_addToPlot);
-
-            QAction action_removeFromPlot("remove from plot", &contextMenu);
-            connect(&action_removeFromPlot, SIGNAL(triggered()), this, SLOT(on_actionRemoveFromPlot_triggered()));
-            contextMenu.addAction(&action_removeFromPlot);
-
-
-            action_removeFromPlot.setVisible(plotwindow->curveExists(FieldID));
-
-
-
-
-            contextMenu.exec(ui->treeWidget->viewport()->mapToGlobal(pos));
-        }
-        (void)paramType;
     }
 }
 
