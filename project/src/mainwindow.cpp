@@ -770,7 +770,7 @@ void MainWindow::watchPointCallback(QString FieldID, QString humanReadableName, 
 
 void MainWindow::on_actionAddToPlot_triggered()
 {
-    #if WATCHPOINT==1
+    #if WATCHPOINT||1
     if (ui->treeWidget->selectedItems().count() > 0){
 
         int row = ui->tableWidget->currentRow();
