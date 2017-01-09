@@ -15,6 +15,7 @@
 #include <QDialogButtonBox>
 #include <functional>
 #include <QFileDialog>
+#include <sstream>
 #include"../libs/qRPCRuntimeParser/project/src/channel_codec_wrapper.h"
 #include"../libs/qRPCRuntimeParser/project/src/rpcruntime_decoded_function_call.h"
 #include"../libs/qRPCRuntimeParser/project/src/rpc_ui.h"
@@ -726,7 +727,7 @@ void MainWindow::on_treeWidget_customContextMenuRequested(const QPoint &pos)
     if (ui->treeWidget->selectedItems().count() > 0){
         int row = ui->tableWidget->currentRow();
         QTreeWidgetItem* selectedItem = ui->treeWidget->selectedItems()[0];
-        QString FieldID = selectedItem->data(0,Qt::UserRole).toString();
+        QString FieldID = selectedItem->data(2,Qt::UserRole).toString();
 
         QPair<int,QByteArray> binEntry;
         SerialNode* serialNode = NULL;
@@ -736,9 +737,8 @@ void MainWindow::on_treeWidget_customContextMenuRequested(const QPoint &pos)
             binEntry = binaryDataList[row];
             serialNode = serialPortList[binEntry.first];
             if(serialNode){
-                #if WATCHPOINT==1
-                RPCRuntimeParameterDescription::Type paramType = serialNode->getPackageDecoder().getParamDescriptionByFieldID(FieldID).rpcParamType;
-                if (paramType == RPCParamType_t::param_int) {
+                #if WATCHPOINT||1
+                if (  selectedItem->data(0,Qt::UserRole).toString() == "integer") {
                     QMenu contextMenu(tr("Context menu"), this);
 
                     QAction action_addToPlot("add to plot", &contextMenu);
@@ -749,12 +749,7 @@ void MainWindow::on_treeWidget_customContextMenuRequested(const QPoint &pos)
                     connect(&action_removeFromPlot, SIGNAL(triggered()), this, SLOT(on_actionRemoveFromPlot_triggered()));
                     contextMenu.addAction(&action_removeFromPlot);
 
-
                     action_removeFromPlot.setVisible(plotwindow->curveExists(FieldID));
-
-
-
-
                     contextMenu.exec(ui->treeWidget->viewport()->mapToGlobal(pos));
                 }
                 #endif
@@ -777,7 +772,7 @@ void MainWindow::on_actionAddToPlot_triggered()
 
 
         QTreeWidgetItem* selectedItem = ui->treeWidget->selectedItems()[0];
-        QString FieldID = selectedItem->data(0,Qt::UserRole).toString();
+        QString FieldID = selectedItem->data(2,Qt::UserRole).toString();
 
         QPair<int,QByteArray> binEntry;
         SerialNode* serialNode = NULL;
@@ -787,18 +782,25 @@ void MainWindow::on_actionAddToPlot_triggered()
         if ((row > 0) && (row < binaryDataList.count())){
                 binEntry = binaryDataList[row];
                 serialNode = serialPortList[binEntry.first];
-
                 humanReadableName = serialNode->serialport->portName()+": "+selectedItem->text(0);
         }
         AddToPlotDialog dialog(FieldID, humanReadableName);
         if (dialog.exec() == QDialog::Accepted){
             QPair<int,int> plotIndex = dialog.getIndex();
+            std::istringstream f(FieldID.toStdString());
+            std::string s;
+            std::getline(f, s, '.');
 
-            watchCallBack_t callback = std::bind(&MainWindow::watchPointCallback, this, std::placeholders::_1,std::placeholders::_2,std::placeholders::_3, std::placeholders::_4, std::placeholders::_5) ;
+            int function_id = std::stoi(s);
+            auto callback_handle = serialNode->getPackageDecoder().set_reply_callback( serialNode->getPackageDecoder().get_description()->get_function(function_id), [this, FieldID,plotIndex,humanReadableName](const RPCRuntimeDecodedFunctionCall &reply) {
+                std::unique_ptr<RPCRuntimeDecodedParam> field = reply.get_param_by_field_id(FieldID.toStdString());
+                if (field.get() ){
+                    QDateTime timeStamp = QDateTime::currentDateTime();
+                    plotwindow->addPlotPoint( FieldID,  humanReadableName, plotIndex,  timeStamp, field->as_integer());
+                }
 
-            if (serialNode){
-                serialNode->addWatchPoint(dialog.getFieldID(),dialog.getHumanReadableName(),plotIndex,callback);
-            }
+            });
+            watchpointCallbacks.insert(FieldID,callback_handle);
             plotwindow->show();
             watchPointCallback(dialog.getFieldID(),dialog.getHumanReadableName(),plotIndex,QDateTime(),3);
 
@@ -809,14 +811,14 @@ void MainWindow::on_actionAddToPlot_triggered()
 
 void MainWindow::on_actionRemoveFromPlot_triggered()
 {
-    #if WATCHPOINT==1
+    #if WATCHPOINT || 1
     if (ui->treeWidget->selectedItems().count() > 0){
 
         int row = ui->tableWidget->currentRow();
 
 
         QTreeWidgetItem* selectedItem = ui->treeWidget->selectedItems()[0];
-        QString FieldID = selectedItem->data(0,Qt::UserRole).toString();
+        QString FieldID = selectedItem->data(2,Qt::UserRole).toString();
 
         QPair<int,QByteArray> binEntry;
         SerialNode* serialNode = NULL;
@@ -826,7 +828,12 @@ void MainWindow::on_actionRemoveFromPlot_triggered()
                 serialNode = serialPortList[binEntry.first];
         }
         if (serialNode){
-            serialNode->removeWatchPoint(FieldID);
+            if (watchpointCallbacks.contains(FieldID)){
+                auto cb_handle = watchpointCallbacks[FieldID];
+
+                serialNode->getPackageDecoder().remove_reply_callback(*cb_handle.rpc_function, cb_handle.callback_function);
+                watchpointCallbacks.remove(FieldID);
+            }
         }
         plotwindow->removeCurve(FieldID);
     }

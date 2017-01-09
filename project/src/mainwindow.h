@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QWidget>
 #include <QMap>
+#include <QMap>
 #include <QFile>
 #include <QDialog>
 #include <QSpinBox>
@@ -79,6 +80,7 @@ private:
     QList<QPair<int,QByteArray>> binaryDataList;
 
     void watchPointCallback(QString FieldID, QString humanReadableName, QPair<int, int> plotIndex, QDateTime timeStamp, int64_t value);
+    QMap<QString, RPCCallbackHandle> watchpointCallbacks;
 };
 
 class AddToPlotDialog : public QDialog

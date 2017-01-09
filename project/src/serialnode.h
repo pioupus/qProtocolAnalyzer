@@ -34,7 +34,7 @@ public:
     void setRPCDescriptionFileName(QString fn);
     void setDecodeType(nodeDecoderType_t decType);
 
-    RPCRuntimeDecoder getPackageDecoder();
+    RPCRuntimeDecoder &getPackageDecoder( );
     bool isUsingChannelCodec();
 
     void setPause(bool pause);
@@ -58,7 +58,7 @@ private:
     bool isNewLine(const QByteArray lineRaw, const QString lineString);
 
     RPCRunTimeProtocolDescription rpcinterpreter;
-    //RPCRuntimeDecoder rpcDecoder;
+    RPCRuntimeDecoder rpcDecoder;
     int colIndex;
     int tabIndex;
     nodeAppearence_t nodeAppearance;

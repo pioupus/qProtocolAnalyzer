@@ -239,9 +239,11 @@ void PlotEntry::openDumpFile()
     dumpFile.setFileName(myfileName);
     if (!dumpFile.open(QIODevice::WriteOnly | QIODevice::Text)){
       #if 1
-        QMessageBox::warning(NULL, QString("ProtocolAnalyzer"),
-                                      "Cant open file \""+myfileName+"\" for dumping plot data.",
-                                      QMessageBox::Ok );
+
+            QMessageBox::warning(NULL, QString("ProtocolAnalyzer"),
+                                 "Cant open file \""+myfileName+"\" for dumping plot data.",
+                                 QMessageBox::Ok );
+
 #endif
     }
     if (dumpFile.isWritable()){

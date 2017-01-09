@@ -3,8 +3,11 @@
 #include <QDateTime>
 #include <fstream>
 #include <QDebug>
+#include"../libs/qRPCRuntimeParser/project/src/channel_codec_wrapper.h"
+#include"../libs/qRPCRuntimeParser/project/src/rpcruntime_decoded_function_call.h"
+
 SerialNode::SerialNode(QObject *parent) :
-    QObject(parent)
+    QObject(parent), rpcDecoder(rpcinterpreter)
 {
     serialport = new QSerialPort();
     timeoutTimer = new QTimer(this);
@@ -81,7 +84,7 @@ void SerialNode::setRPCDescriptionFileName(QString fn)
 {
     std::ifstream xmlfile{fn.toStdString()};
     rpcinterpreter.openProtocolDescription(xmlfile);
-    //rpcDecoder = RPCRuntimeDecoder(rpcinterpreter);
+    rpcDecoder = RPCRuntimeDecoder(rpcinterpreter);
 }
 
 void SerialNode::setDecodeType(nodeDecoderType_t decType)
@@ -89,10 +92,10 @@ void SerialNode::setDecodeType(nodeDecoderType_t decType)
     (void)decType;
 }
 
-RPCRuntimeDecoder SerialNode::getPackageDecoder()
+RPCRuntimeDecoder &SerialNode::getPackageDecoder()
 {
-    RPCRuntimeDecoder result{rpcinterpreter};
-    return result;
+    //RPCRuntimeDecoder result{rpcinterpreter};
+    return rpcDecoder;
 }
 
 bool SerialNode::isUsingChannelCodec()
@@ -173,15 +176,29 @@ bool SerialNode::isNewLine(const QByteArray lineRaw, const QString lineString){
 void SerialNode::addLine(){
     QString s = inComingTime.toString("MM.dd HH:mm:ss.zzz");
     MainWindow* mainwin = qobject_cast<MainWindow*>(parent());
-#if WATCHPOINT==1
-    if (rpcDecoder.getWatchPointList().count())
+#if WATCHPOINT||1
+    if (rpcDecoder.has_callbacks())
     {
-        rpcDecoder.setTimeStamp(inComingTime);
+        // rpcDecoder.setTimeStamp(inComingTime);
         if (isUsingChannelCodec()){
-            rpcDecoder.RPCDecodeChannelCodedData(lineBufferRaw);
+            Channel_codec_wrapper cc(rpcDecoder);
+            cc.add_data((const unsigned char *)lineBufferRaw.constData(),lineBufferRaw.size());
+            if (cc.transfer_complete()){
+                RPCRuntimeDecodedFunctionCall function_call = cc.pop();
+                (void)function_call;
+            }
         }else{
-            rpcDecoder.RPCDecodeRPCData(lineBufferRaw);
+            RPCRuntimeTransfer transfer = rpcDecoder.decode( (const unsigned char *)lineBufferRaw.constData(),lineBufferRaw.size() );
+            if (transfer.is_complete()){
+                RPCRuntimeDecodedFunctionCall function_call = transfer.decode();
+               (void)function_call;
+            }
         }
+       // if (isUsingChannelCodec()){
+       //     rpcDecoder.RPCDecodeChannelCodedData(lineBufferRaw);
+       // }else{
+       //     rpcDecoder.RPCDecodeRPCData(lineBufferRaw);
+       // }
     }
 #endif
     mainwin->addNewEntry(s,lineBufferDisplay,lineBufferRaw, colIndex, tabIndex);
